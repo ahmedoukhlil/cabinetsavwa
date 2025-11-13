@@ -15,6 +15,7 @@
   'liste-actes' => 'App\\Http\\Livewire\\ListeActes',
   'medecin-manager' => 'App\\Http\\Livewire\\MedecinManager',
   'medecin-paiement-stats' => 'App\\Http\\Livewire\\MedecinPaiementStats',
+  'medicament-manager' => 'App\\Http\\Livewire\\MedicamentManager',
   'ordonnance-manager' => 'App\\Http\\Livewire\\OrdonnanceManager',
   'patient-manager' => 'App\\Http\\Livewire\\PatientManager',
   'patient-search' => 'App\\Http\\Livewire\\PatientSearch',

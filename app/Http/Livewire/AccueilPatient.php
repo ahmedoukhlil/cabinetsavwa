@@ -39,6 +39,7 @@ class AccueilPatient extends Component
     public $showDeleteConfirmation = false;
     public $showCreateActeModal = false;
     public $showListeActesModal = false;
+    public $showListeMedicamentsModal = false;
     public $showCaisseOperations = false;
     public $showDepenses = false;
     public $showUsersModal = false;
@@ -186,6 +187,20 @@ class AccueilPatient extends Component
     public function fermerListeActesModal()
     {
         $this->showListeActesModal = false;
+        $this->showListeMedicamentsModal = false;
+    }
+
+    public function ouvrirListeMedicamentsModal()
+    {
+        $this->showListeMedicamentsModal = true;
+        $this->showCaisseOperations = false;
+        $this->showStatistiques = false;
+        $this->emit('listeMedicamentsModalOpened');
+    }
+
+    public function fermerListeMedicamentsModal()
+    {
+        $this->showListeMedicamentsModal = false;
     }
 
     public function refreshCachedData()
@@ -213,6 +228,7 @@ class AccueilPatient extends Component
             'showDeleteConfirmation',
             'showCreateActeModal',
             'showListeActesModal',
+            'showListeMedicamentsModal',
             'showCaisseOperations',
             'showDepenses',
             'showPatientMenu',
@@ -239,6 +255,7 @@ class AccueilPatient extends Component
         $this->action = null;
         $this->showAssureurModal = false;
         $this->showListeActesModal = false;
+        $this->showListeMedicamentsModal = false;
         $this->showUsersModal = false;
         $this->showMedecinsModal = false;
         $this->showTypePaiementModal = false;
@@ -273,6 +290,7 @@ class AccueilPatient extends Component
         // Fermer les autres modals mais garder le menu patient ouvert
         $this->showAssureurModal = false;
         $this->showListeActesModal = false;
+        $this->showListeMedicamentsModal = false;
         $this->showUsersModal = false;
         $this->showMedecinsModal = false;
         $this->showTypePaiementModal = false;
@@ -305,6 +323,7 @@ class AccueilPatient extends Component
         // Fermer les autres modals mais garder le menu patient ouvert
         $this->showAssureurModal = false;
         $this->showListeActesModal = false;
+        $this->showListeMedicamentsModal = false;
         $this->showUsersModal = false;
         $this->showMedecinsModal = false;
         $this->showTypePaiementModal = false;
@@ -337,6 +356,7 @@ class AccueilPatient extends Component
         // Fermer les autres modals mais garder le menu patient ouvert
         $this->showAssureurModal = false;
         $this->showListeActesModal = false;
+        $this->showListeMedicamentsModal = false;
         $this->showUsersModal = false;
         $this->showMedecinsModal = false;
         $this->showTypePaiementModal = false;
@@ -444,6 +464,7 @@ class AccueilPatient extends Component
         // Fermer les autres modals
         $this->showAssureurModal = false;
         $this->showListeActesModal = false;
+        $this->showListeMedicamentsModal = false;
         $this->showUsersModal = false;
         $this->showMedecinsModal = false;
         $this->showTypePaiementModal = false;
@@ -475,6 +496,7 @@ class AccueilPatient extends Component
         // Fermer les autres modals
         $this->showAssureurModal = false;
         $this->showListeActesModal = false;
+        $this->showListeMedicamentsModal = false;
         $this->showUsersModal = false;
         $this->showMedecinsModal = false;
         $this->showTypePaiementModal = false;
@@ -558,6 +580,7 @@ class AccueilPatient extends Component
         // Fermer les autres modals
         $this->showAssureurModal = false;
         $this->showListeActesModal = false;
+        $this->showListeMedicamentsModal = false;
         $this->showUsersModal = false;
         $this->showMedecinsModal = false;
         $this->showTypePaiementModal = false;
@@ -620,6 +643,7 @@ class AccueilPatient extends Component
         // Fermer les autres modals mais garder le menu patient ouvert
         $this->showAssureurModal = false;
         $this->showListeActesModal = false;
+        $this->showListeMedicamentsModal = false;
         $this->showUsersModal = false;
         $this->showMedecinsModal = false;
         $this->showTypePaiementModal = false;

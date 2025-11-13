@@ -76,6 +76,6 @@ class Acte extends Model
 
 	public function typeActe()
 	{
-		return $this->belongsTo(TypeActe::class, 'fkidTypeActe', 'IDTypeActe');
+		return $this->belongsTo(Typeacte::class, 'fkidTypeActe', 'id');
 	}
 }

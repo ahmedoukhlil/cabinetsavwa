@@ -71,6 +71,7 @@ class ActeManager extends Component
     public function save()
     {
         $this->validate();
+        $maxNordre = Acte::max('nordre') ?? 0;
         $data = [
             'Acte' => $this->acteNom,
             'PrixRef' => $this->montant,
@@ -84,6 +85,8 @@ class ActeManager extends Component
                 session()->flash('message', 'Acte modifié avec succès.');
             }
         } else {
+            $data['nordre'] = $maxNordre + 1;
+            $data['user'] = auth()->user()->name ?? 'system';
             Acte::create($data);
             session()->flash('message', 'Acte créé avec succès.');
         }
