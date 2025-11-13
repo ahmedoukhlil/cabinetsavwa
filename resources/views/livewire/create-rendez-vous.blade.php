@@ -609,11 +609,7 @@
 </div>
 
 <script>
-    window.addEventListener('open-receipt', function(e) {
-        if (e.detail && e.detail.url) {
-            window.open(e.detail.url, '_blank');
-        }
-    });
+    {{-- L'écouteur open-receipt est géré globalement dans le layout principal pour éviter les doublons --}}
     
     // Empêcher la fermeture du modal quand un patient est sélectionné
     window.addEventListener('patient-selected', function(e) {

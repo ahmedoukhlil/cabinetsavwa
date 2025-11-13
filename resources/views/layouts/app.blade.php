@@ -368,5 +368,20 @@
         }, 500);
     });
     </script>
+
+    {{-- Écouteur global unique pour l'événement open-receipt --}}
+    <script>
+        // Écouteur global pour éviter les doublons quand plusieurs composants sont chargés
+        if (!window.openReceiptListenerAdded) {
+            window.addEventListener('open-receipt', function(e) {
+                console.log('Événement open-receipt reçu:', e.detail);
+                if (e.detail && e.detail.url) {
+                    console.log('Ouverture de l\'URL:', e.detail.url);
+                    window.open(e.detail.url, '_blank');
+                }
+            });
+            window.openReceiptListenerAdded = true;
+        }
+    </script>
 </body>
 </html>

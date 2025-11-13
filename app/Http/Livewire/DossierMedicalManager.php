@@ -71,7 +71,7 @@ class DossierMedicalManager extends Component
         'lignesTraitement.*.traitement' => 'nullable|string|max:245',
         'lignesTraitement.*.prix' => 'nullable|numeric|min:0',
         'medecinId' => 'required|exists:medecins,idMedecin',
-        'factureId' => 'required|exists:factures,Idfacture',
+        'factureId' => 'required|exists:facture,Idfacture',
     ];
 
     protected $messages = [

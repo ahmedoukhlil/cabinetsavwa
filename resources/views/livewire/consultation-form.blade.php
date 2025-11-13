@@ -142,12 +142,4 @@
     </style>
     @endpush
 
-    <script>
-    window.addEventListener('open-receipt', function(e) {
-        console.log('Événement open-receipt reçu:', e.detail);
-        if (e.detail && e.detail.url) {
-            console.log('Ouverture de l\'URL:', e.detail.url);
-            window.open(e.detail.url, '_blank');
-        }
-    });
-</script> 
+    {{-- L'écouteur open-receipt est géré globalement dans le layout principal pour éviter les doublons --}} 
