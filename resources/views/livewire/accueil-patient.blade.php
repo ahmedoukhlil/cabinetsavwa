@@ -931,18 +931,18 @@
             <livewire:patient-search />
         </div>
         <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 w-full lg:w-auto">
-            <button wire:click="openGestionPatientsModal" class="nav-button w-full sm:w-auto px-3 sm:px-4 md:px-6 py-2 md:py-3 border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl transition-all duration-300 ease-in-out text-sm sm:text-base md:text-lg flex items-center justify-center gap-2">
-                <span class="icon-container inline-flex items-center justify-center rounded-full p-1 md:p-2 bg-white text-primary transition-all duration-300 ease-in-out">
+            <button wire:click="openGestionPatientsModal" class="nav-button w-full sm:w-auto sm:min-w-[180px] md:min-w-[200px] px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl transition-all duration-300 ease-in-out text-sm sm:text-base md:text-lg flex items-center justify-center gap-2">
+                <span class="icon-container inline-flex items-center justify-center rounded-full p-1.5 sm:p-2 md:p-2.5 bg-white text-primary transition-all duration-300 ease-in-out">
                     <i class="fas fa-users text-primary text-lg sm:text-xl md:text-2xl transition-all duration-300 ease-in-out"></i>
                 </span>
                 <span class="font-semibold transition-all duration-300 ease-in-out">Liste de patients</span>
             </button>
-                         <button wire:click="showCreateRdv" class="nav-button w-full sm:w-auto px-3 sm:px-4 md:px-6 py-2 md:py-3 border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl transition-all duration-300 ease-in-out text-sm sm:text-base md:text-lg flex items-center justify-center gap-2">
-                 <span class="icon-container inline-flex items-center justify-center rounded-full p-1 md:p-2 bg-white text-primary transition-all duration-300 ease-in-out">
-                     <i class="fas fa-calendar-plus text-primary text-lg sm:text-xl md:text-2xl transition-all duration-300 ease-in-out"></i>
-                 </span>
-                 <span class="font-semibold transition-all duration-300 ease-in-out">Gestion RDV</span>
-             </button>
+            <button wire:click="showCreateRdv" class="nav-button w-full sm:w-auto sm:min-w-[180px] md:min-w-[200px] px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl transition-all duration-300 ease-in-out text-sm sm:text-base md:text-lg flex items-center justify-center gap-2">
+                <span class="icon-container inline-flex items-center justify-center rounded-full p-1.5 sm:p-2 md:p-2.5 bg-white text-primary transition-all duration-300 ease-in-out">
+                    <i class="fas fa-calendar-plus text-primary text-lg sm:text-xl md:text-2xl transition-all duration-300 ease-in-out"></i>
+                </span>
+                <span class="font-semibold transition-all duration-300 ease-in-out">Gestion RDV</span>
+            </button>
         </div>
     </div>
 
@@ -952,25 +952,25 @@
             <button
                 wire:click="togglePatientMenu"
                 @if(!$selectedPatient) disabled title="Veuillez sélectionner un patient d'abord" @endif
-                class="nav-button flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 py-2 md:py-3 w-full xs:w-auto sm:w-48 md:w-56 border-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform hover:scale-105 active:scale-95 ripple menu-button
+                class="nav-button flex items-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 w-full sm:w-auto sm:min-w-[180px] md:min-w-[200px] lg:min-w-[220px] border-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform hover:scale-105 active:scale-95 ripple menu-button
                 {{ $showPatientMenu ? 'bg-primary text-white border-primary shadow-xl scale-105 active' : (!$selectedPatient ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed hover:scale-100' : 'bg-white text-primary border-primary hover:bg-primary hover:text-white') }}">
-                <span class="icon-container inline-flex items-center justify-center rounded-full p-1 md:p-2 transition-all duration-500 ease-out {{ $showPatientMenu ? 'bg-white text-primary rotate-12' : 'bg-white text-primary' }}">
+                <span class="icon-container inline-flex items-center justify-center rounded-full p-1.5 sm:p-2 md:p-2.5 transition-all duration-500 ease-out {{ $showPatientMenu ? 'bg-white text-primary rotate-12' : 'bg-white text-primary' }}">
                     <i class="fas fa-user-friends text-primary text-lg sm:text-xl md:text-2xl transition-all duration-500 ease-out {{ $showPatientMenu ? 'text-primary' : 'text-primary' }}"></i>
                 </span>
                 <span class="font-semibold transition-all duration-500 ease-out">Gestion du patient</span>
             </button>
             {{-- Caisse Paie --}}
             <button wire:click="showCaisseOperations"
-                class="nav-button flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 py-2 md:py-3 w-full xs:w-auto sm:w-48 md:w-56 border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95">
-                <span class="icon-container inline-flex items-center justify-center rounded-full p-1 md:p-2 bg-white text-primary transition-all duration-500 ease-out">
+                class="nav-button flex items-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 w-full sm:w-auto sm:min-w-[180px] md:min-w-[200px] lg:min-w-[220px] border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95">
+                <span class="icon-container inline-flex items-center justify-center rounded-full p-1.5 sm:p-2 md:p-2.5 bg-white text-primary transition-all duration-500 ease-out">
                     <i class="fas fa-cash-register text-primary text-lg sm:text-xl md:text-2xl transition-all duration-500 ease-out"></i>
                 </span>
                 <span class="font-semibold transition-all duration-500 ease-out">Caisse Paie</span>
             </button>
             {{-- Dépenses --}}
             @if($isDocteurProprietaire)
-            <button wire:click="openDepenses" class="nav-button flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 py-2 md:py-3 w-full xs:w-auto sm:w-48 md:w-56 border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95">
-                <span class="icon-container inline-flex items-center justify-center rounded-full p-1 md:p-2 bg-white text-primary transition-all duration-500 ease-out">
+            <button wire:click="openDepenses" class="nav-button flex items-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 w-full sm:w-auto sm:min-w-[180px] md:min-w-[200px] lg:min-w-[220px] border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95">
+                <span class="icon-container inline-flex items-center justify-center rounded-full p-1.5 sm:p-2 md:p-2.5 bg-white text-primary transition-all duration-500 ease-out">
                     <i class="fas fa-receipt text-primary text-lg sm:text-xl md:text-2xl transition-all duration-500 ease-out"></i>
                 </span>
                 <span class="font-semibold transition-all duration-500 ease-out">Dépenses</span>
@@ -978,8 +978,8 @@
             @endif
             {{-- Statistiques --}}
             @if($isDocteurProprietaire)
-            <button wire:click="showStatistiques" class="nav-button flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 py-2 md:py-3 w-full xs:w-auto sm:w-48 md:w-56 border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95">
-                <span class="icon-container inline-flex items-center justify-center rounded-full p-1 md:p-2 bg-white text-primary transition-all duration-500 ease-out">
+            <button wire:click="showStatistiques" class="nav-button flex items-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 w-full sm:w-auto sm:min-w-[180px] md:min-w-[200px] lg:min-w-[220px] border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95">
+                <span class="icon-container inline-flex items-center justify-center rounded-full p-1.5 sm:p-2 md:p-2.5 bg-white text-primary transition-all duration-500 ease-out">
                     <i class="fas fa-chart-bar text-primary text-lg sm:text-xl md:text-2xl transition-all duration-500 ease-out"></i>
                 </span>
                 <span class="font-semibold transition-all duration-500 ease-out">Statistiques</span>
@@ -987,9 +987,9 @@
             @endif
             {{-- Gestion du cabinet (bouton principal) --}}
             <button wire:click="toggleCabinetMenu"
-                class="nav-button flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 py-2 md:py-3 w-full xs:w-auto sm:w-48 md:w-56 border-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform hover:scale-105 active:scale-95 ripple menu-button
+                class="nav-button flex items-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 w-full sm:w-auto sm:min-w-[180px] md:min-w-[200px] lg:min-w-[220px] border-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform hover:scale-105 active:scale-95 ripple menu-button
                 {{ $showCabinetMenu ? 'bg-primary text-white border-primary shadow-xl scale-105 active' : 'bg-white text-primary border-primary hover:bg-primary hover:text-white' }}">
-                <span class="icon-container inline-flex items-center justify-center rounded-full p-1 md:p-2 transition-all duration-500 ease-out {{ $showCabinetMenu ? 'bg-white text-primary rotate-12' : 'bg-white text-primary' }}">
+                <span class="icon-container inline-flex items-center justify-center rounded-full p-1.5 sm:p-2 md:p-2.5 transition-all duration-500 ease-out {{ $showCabinetMenu ? 'bg-white text-primary rotate-12' : 'bg-white text-primary' }}">
                     <i class="fas fa-cogs text-primary text-lg sm:text-xl md:text-2xl transition-all duration-500 ease-out {{ $showCabinetMenu ? 'text-primary' : 'text-primary' }}"></i>
                 </span>
                 <span class="font-semibold transition-all duration-500 ease-out">Gestion du cabinet</span>
@@ -1003,45 +1003,37 @@
                  data-menu="patient">
                 {{-- Consultation - Même logique que les sections principales --}}
                 <button wire:click="showConsultation"
-                    class="nav-button patient-nav-button flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 py-2 md:py-3 w-full xs:w-auto sm:w-48 md:w-56 border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95 {{ !$selectedPatient ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed hover:scale-100' : '' }}">
-                    <span class="icon-container inline-flex items-center justify-center rounded-full p-1 md:p-2 bg-white text-primary transition-all duration-500 ease-out">
+                    class="nav-button patient-nav-button flex items-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 w-full sm:w-auto sm:min-w-[180px] md:min-w-[200px] lg:min-w-[220px] border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95 {{ !$selectedPatient ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed hover:scale-100' : '' }}">
+                    <span class="icon-container inline-flex items-center justify-center rounded-full p-1.5 sm:p-2 md:p-2.5 bg-white text-primary transition-all duration-500 ease-out">
                      <i class="fas fa-stethoscope text-primary text-lg sm:text-xl md:text-2xl transition-all duration-500 ease-out"></i>
                  </span>
                  <span class="font-semibold transition-all duration-500 ease-out">Consultation</span>
              </button>
                 {{-- Facture/Devis - Même logique que les sections principales --}}
                 <button wire:click="showReglement"
-                    class="nav-button patient-nav-button flex items-center gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 w-full sm:w-48 md:w-56 border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-base md:text-lg justify-center transform active:scale-95 {{ !$selectedPatient ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed hover:scale-100' : '' }}">
-                    <span class="icon-container inline-flex items-center justify-center rounded-full p-1 md:p-2 bg-white text-primary transition-all duration-500 ease-out">
-                     <i class="fas fa-file-invoice-dollar text-primary text-xl md:text-2xl transition-all duration-500 ease-out"></i>
+                    class="nav-button patient-nav-button flex items-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 w-full sm:w-auto sm:min-w-[180px] md:min-w-[200px] lg:min-w-[220px] border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95 {{ !$selectedPatient ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed hover:scale-100' : '' }}">
+                    <span class="icon-container inline-flex items-center justify-center rounded-full p-1.5 sm:p-2 md:p-2.5 bg-white text-primary transition-all duration-500 ease-out">
+                     <i class="fas fa-file-invoice-dollar text-primary text-lg sm:text-xl md:text-2xl transition-all duration-500 ease-out"></i>
                  </span>
                  <span class="font-semibold transition-all duration-500 ease-out">Facture/Devis</span>
              </button>
                 {{-- Rendez-vous - Même logique que les sections principales --}}
                 <button wire:click="showRendezVous"
-                    class="nav-button patient-nav-button flex items-center gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 w-full sm:w-48 md:w-56 border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-base md:text-lg justify-center transform active:scale-95 {{ !$selectedPatient ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed hover:scale-100' : '' }}">
-                    <span class="icon-container inline-flex items-center justify-center rounded-full p-1 md:p-2 bg-white text-primary transition-all duration-500 ease-out">
-                     <i class="fas fa-calendar-check text-primary text-xl md:text-2xl transition-all duration-500 ease-out"></i>
+                    class="nav-button patient-nav-button flex items-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 w-full sm:w-auto sm:min-w-[180px] md:min-w-[200px] lg:min-w-[220px] border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95 {{ !$selectedPatient ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed hover:scale-100' : '' }}">
+                    <span class="icon-container inline-flex items-center justify-center rounded-full p-1.5 sm:p-2 md:p-2.5 bg-white text-primary transition-all duration-500 ease-out">
+                     <i class="fas fa-calendar-check text-primary text-lg sm:text-xl md:text-2xl transition-all duration-500 ease-out"></i>
                  </span>
                  <span class="font-semibold transition-all duration-500 ease-out">Rendez-vous</span>
              </button>
                 {{-- Ordonnances --}}
                 <button wire:click="ouvrirOrdonnanceModal"
-                    class="nav-button patient-nav-button flex items-center gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 w-full sm:w-48 md:w-56 border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-base md:text-lg justify-center transform active:scale-95 {{ !$selectedPatient ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed hover:scale-100' : '' }}"
+                    class="nav-button patient-nav-button flex items-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 w-full sm:w-auto sm:min-w-[180px] md:min-w-[200px] lg:min-w-[220px] border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95 {{ !$selectedPatient ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed hover:scale-100' : '' }}"
                     @if(!$selectedPatient) disabled @endif
                     type="button">
-                    <span class="icon-container inline-flex items-center justify-center rounded-full p-1 md:p-2 bg-white text-primary transition-all duration-500 ease-out">
-                     <i class="fas fa-file-prescription text-primary text-xl md:text-2xl transition-all duration-500 ease-out"></i>
+                    <span class="icon-container inline-flex items-center justify-center rounded-full p-1.5 sm:p-2 md:p-2.5 bg-white text-primary transition-all duration-500 ease-out">
+                     <i class="fas fa-file-prescription text-primary text-lg sm:text-xl md:text-2xl transition-all duration-500 ease-out"></i>
                  </span>
                  <span class="font-semibold transition-all duration-500 ease-out">Ordonnances</span>
-             </button>
-                {{-- Dossier médical - Même logique que les sections principales --}}
-                <button wire:click="showDossierMedical"
-                    class="nav-button patient-nav-button flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 py-2 md:py-3 w-full xs:w-auto sm:w-48 md:w-56 border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95 {{ !$selectedPatient ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed hover:scale-100' : '' }}">
-                    <span class="icon-container inline-flex items-center justify-center rounded-full p-1 md:p-2 bg-white text-primary transition-all duration-500 ease-out">
-                     <i class="fas fa-file-medical text-primary text-xl md:text-2xl transition-all duration-500 ease-out"></i>
-                 </span>
-                 <span class="font-semibold transition-all duration-500 ease-out">Dossier médical</span>
              </button>
             </div>
          </div>
@@ -1415,41 +1407,6 @@
         </div>
     @endif
 
-    {{-- Modal Dossier Médical --}}
-    @if($showDossierMedical && $selectedPatient)
-        <div class="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full bg-black bg-opacity-50">
-            <div class="relative p-4 w-full max-w-6xl max-h-full">
-                <!-- Modal content -->
-                <div class="relative bg-white rounded-lg shadow-sm">
-                    <!-- Modal header -->
-                    <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t border-gray-200">
-                        <h3 class="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                            <i class="fas fa-folder-medical text-primary"></i>
-                            <span>Dossier Médical</span>
-                            @if($selectedPatient)
-                            <span class="text-sm font-normal text-gray-600 ml-2">
-                                - {{ is_array($selectedPatient) ? ($selectedPatient['NomPatient'] ?? $selectedPatient['Nom'] ?? 'Patient') : ($selectedPatient->NomPatient ?? $selectedPatient->Nom ?? 'Patient') }}
-                            </span>
-                            @endif
-                        </h3>
-                        <button type="button" 
-                                wire:click="fermerDossierMedicalModal"
-                                class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center">
-                            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-                            </svg>
-                            <span class="sr-only">Fermer</span>
-                        </button>
-                    </div>
-                    <!-- Modal body -->
-                    <div class="p-4 md:p-5 space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
-                        <livewire:dossier-medical-manager wire:key="dossier-medical-manager-modal-{{ is_array($selectedPatient) ? ($selectedPatient['ID'] ?? '') : ($selectedPatient->ID ?? '') }}" :patient="$selectedPatient" />
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
-
     {{-- Modal Consultation --}}
     @if($showConsultation && $selectedPatient)
         <div class="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full bg-black bg-opacity-50">
@@ -1513,7 +1470,7 @@
                     </div>
                     <!-- Modal body -->
                     <div class="p-4 md:p-5 space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
-                        <livewire:reglement-facture wire:key="reglement-modal-{{ is_array($selectedPatient) ? ($selectedPatient['ID'] ?? '') : ($selectedPatient->ID ?? '') }}" :selectedPatient="$selectedPatient" />
+                        <livewire:reglement-facture wire:key="reglement-modal-{{ is_array($selectedPatient) ? ($selectedPatient['ID'] ?? '') : ($selectedPatient->ID ?? '') }}" :selectedPatient="$selectedPatient" lazy />
                     </div>
                 </div>
             </div>
@@ -1652,8 +1609,8 @@
         
         {{-- Gestion des assurances --}}
         <button wire:click="ouvrirAssureurModal"
-            class="nav-button flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 py-2 md:py-3 w-full xs:w-auto sm:w-48 md:w-56 border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95 touch-friendly">
-            <span class="icon-container inline-flex items-center justify-center rounded-full p-1 md:p-2 bg-white text-primary transition-all duration-500 ease-out">
+            class="nav-button flex items-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 w-full sm:w-auto sm:min-w-[180px] md:min-w-[200px] lg:min-w-[220px] border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95 touch-friendly">
+            <span class="icon-container inline-flex items-center justify-center rounded-full p-1.5 sm:p-2 md:p-2.5 bg-white text-primary transition-all duration-500 ease-out">
                 <i class="fas fa-shield-alt text-primary text-lg sm:text-xl md:text-2xl transition-all duration-500 ease-out"></i>
             </span>
             <span class="font-semibold transition-all duration-500 ease-out">
@@ -1664,8 +1621,8 @@
 
         {{-- Liste des actes/soins --}}
         <button wire:click="ouvrirListeActesModal"
-            class="nav-button flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 py-2 md:py-3 w-full xs:w-auto sm:w-48 md:w-56 border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95 touch-friendly">
-            <span class="icon-container inline-flex items-center justify-center rounded-full p-1 md:p-2 bg-white text-primary transition-all duration-500 ease-out">
+            class="nav-button flex items-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 w-full sm:w-auto sm:min-w-[180px] md:min-w-[200px] lg:min-w-[220px] border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95 touch-friendly">
+            <span class="icon-container inline-flex items-center justify-center rounded-full p-1.5 sm:p-2 md:p-2.5 bg-white text-primary transition-all duration-500 ease-out">
                 <i class="fas fa-list-alt text-primary text-lg sm:text-xl md:text-2xl transition-all duration-500 ease-out"></i>
             </span>
             <span class="font-semibold transition-all duration-500 ease-out">
@@ -1676,8 +1633,8 @@
 
         {{-- Gestion des médecins --}}
         <button wire:click="ouvrirMedecinsModal"
-            class="nav-button flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 py-2 md:py-3 w-full xs:w-auto sm:w-48 md:w-56 border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95 touch-friendly">
-            <span class="icon-container inline-flex items-center justify-center rounded-full p-1 md:p-2 bg-white text-primary transition-all duration-500 ease-out">
+            class="nav-button flex items-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 w-full sm:w-auto sm:min-w-[180px] md:min-w-[200px] lg:min-w-[220px] border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95 touch-friendly">
+            <span class="icon-container inline-flex items-center justify-center rounded-full p-1.5 sm:p-2 md:p-2.5 bg-white text-primary transition-all duration-500 ease-out">
                 <i class="fas fa-user-md text-primary text-lg sm:text-xl md:text-2xl transition-all duration-500 ease-out"></i>
             </span>
             <span class="font-semibold transition-all duration-500 ease-out">
@@ -1688,8 +1645,8 @@
 
         {{-- Gestion des types de paiement --}}
         <button wire:click="ouvrirTypePaiementModal"
-            class="nav-button flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 py-2 md:py-3 w-full xs:w-auto sm:w-48 md:w-56 border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95 touch-friendly">
-            <span class="icon-container inline-flex items-center justify-center rounded-full p-1 md:p-2 bg-white text-primary transition-all duration-500 ease-out">
+            class="nav-button flex items-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 w-full sm:w-auto sm:min-w-[180px] md:min-w-[200px] lg:min-w-[220px] border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95 touch-friendly">
+            <span class="icon-container inline-flex items-center justify-center rounded-full p-1.5 sm:p-2 md:p-2.5 bg-white text-primary transition-all duration-500 ease-out">
                 <i class="fas fa-credit-card text-primary text-lg sm:text-xl md:text-2xl transition-all duration-500 ease-out"></i>
             </span>
             <span class="font-semibold transition-all duration-500 ease-out">
@@ -1701,8 +1658,8 @@
         {{-- Gestion des utilisateurs (Docteur Propriétaire uniquement) --}}
         @if($isDocteurProprietaire)
         <button wire:click="openUsersModal"
-            class="nav-button flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 py-2 md:py-3 w-full xs:w-auto sm:w-48 md:w-56 border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95 touch-friendly">
-            <span class="icon-container inline-flex items-center justify-center rounded-full p-1 md:p-2 bg-white text-primary transition-all duration-500 ease-out">
+            class="nav-button flex items-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 md:py-3.5 w-full sm:w-auto sm:min-w-[180px] md:min-w-[200px] lg:min-w-[220px] border-2 border-primary bg-white text-primary rounded-xl shadow-lg hover:bg-primary hover:text-white hover:shadow-xl hover:scale-105 transition-all duration-500 ease-out text-sm sm:text-base md:text-lg justify-center transform active:scale-95 touch-friendly">
+            <span class="icon-container inline-flex items-center justify-center rounded-full p-1.5 sm:p-2 md:p-2.5 bg-white text-primary transition-all duration-500 ease-out">
                 <i class="fas fa-users-cog text-primary text-lg sm:text-xl md:text-2xl transition-all duration-500 ease-out"></i>
             </span>
             <span class="font-semibold transition-all duration-500 ease-out">
@@ -1860,7 +1817,7 @@
                      const wireClick = button.getAttribute('wire:click');
                      console.log('🔗 wire:click détecté:', wireClick);
                      
-                     if (wireClick && (wireClick.includes('showConsultation') || wireClick.includes('showReglement') || wireClick.includes('showRendezVous') || wireClick.includes('showDossierMedical'))) {
+                     if (wireClick && (wireClick.includes('showConsultation') || wireClick.includes('showReglement') || wireClick.includes('showRendezVous'))) {
                          console.log('✅ Méthode de sous-section détectée, préparation de la transition...');
                          
                          // Extraire la méthode depuis wire:click
@@ -2348,8 +2305,8 @@
                  // Gestion spéciale pour les changements d'action avec navigation ultra-fluide
                  if (message.updateQueue && message.updateQueue.some(update => 
                      update.type === 'callMethod' && 
-                     (update.payload.method === 'setAction' && ['consultation', 'reglement', 'rendezvous', 'dossier'].includes(update.payload.params[0])) ||
-                     (update.payload.method === 'showConsultation' || update.payload.method === 'showReglement' || update.payload.method === 'showRendezVous' || update.payload.method === 'showDossierMedical')
+                     (update.payload.method === 'setAction' && ['consultation', 'reglement', 'rendezvous'].includes(update.payload.params[0])) ||
+                     (update.payload.method === 'showConsultation' || update.payload.method === 'showReglement' || update.payload.method === 'showRendezVous')
                  )) {
                      console.log('🎯 Livewire a changé l\'action, animation du nouveau contenu...');
                      

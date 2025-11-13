@@ -43,8 +43,20 @@ class DossierMedicalManager extends Component
     // Médecin sélectionné
     public $medecinId;
 
+    // Indique si le médecin est verrouillé (ne peut pas être changé)
+    public $medecinLocked = false;
+
+    // Informations du médecin verrouillé
+    public $medecinLockedData = null;
+
     // Facture sélectionnée
     public $factureId;
+
+    // Indique si la facture est verrouillée (ne peut pas être changée)
+    public $factureLocked = false;
+
+    // Informations de la facture verrouillée
+    public $factureLockedData = null;
 
     // Liste des factures du patient
     public $facturesPatient = [];
@@ -70,10 +82,10 @@ class DossierMedicalManager extends Component
         'factureId.exists' => 'La facture sélectionnée n\'existe pas',
     ];
 
-    public function mount($patient = null)
+    public function mount($patient = null, $facture = null, $medecin = null)
     {
         try {
-            Log::info('DossierMedicalManager: mount appelé', ['patient' => $patient ? 'existe' : 'null']);
+            Log::info('DossierMedicalManager: mount appelé', ['patient' => $patient ? 'existe' : 'null', 'facture' => $facture ? 'existe' : 'null', 'medecin' => $medecin ? 'existe' : 'null']);
             
             if ($patient) {
                 $this->patient = $patient;
@@ -84,8 +96,22 @@ class DossierMedicalManager extends Component
                 }
                 
                 if ($this->patientId) {
-                    $this->loadFichesPatient();
                     $this->loadFacturesPatient();
+                    
+                    // Si une facture est fournie, la pré-sélectionner et la verrouiller
+                    if ($facture) {
+                        if (is_array($facture)) {
+                            $this->factureId = $facture['Idfacture'] ?? $facture['id'] ?? null;
+                            $this->factureLockedData = $facture;
+                        } elseif (is_object($facture)) {
+                            $this->factureId = $facture->Idfacture ?? $facture->id ?? null;
+                            $this->factureLockedData = $facture->toArray();
+                        }
+                        // Verrouiller la facture si elle est fournie en paramètre
+                        $this->factureLocked = true;
+                    }
+                    
+                    $this->loadFichesPatient();
                 }
             }
 
@@ -95,10 +121,23 @@ class DossierMedicalManager extends Component
             // Charger le référentiel avec cache
             $this->loadReferentielActes();
 
-            // Définir le médecin par défaut (utilisateur connecté si c'est un médecin)
-            $user = Auth::user();
-            if ($user && isset($user->fkidmedecin) && $user->fkidmedecin) {
-                $this->medecinId = $user->fkidmedecin;
+            // Si un médecin est fourni, le pré-sélectionner et le verrouiller
+            if ($medecin) {
+                if (is_array($medecin)) {
+                    $this->medecinId = $medecin['idMedecin'] ?? $medecin['id'] ?? null;
+                    $this->medecinLockedData = $medecin;
+                } elseif (is_object($medecin)) {
+                    $this->medecinId = $medecin->idMedecin ?? $medecin->id ?? null;
+                    $this->medecinLockedData = $medecin->toArray();
+                }
+                // Verrouiller le médecin si il est fourni en paramètre
+                $this->medecinLocked = true;
+            } else {
+                // Définir le médecin par défaut (utilisateur connecté si c'est un médecin)
+                $user = Auth::user();
+                if ($user && isset($user->fkidmedecin) && $user->fkidmedecin) {
+                    $this->medecinId = $user->fkidmedecin;
+                }
             }
             
             Log::info('DossierMedicalManager: mount terminé avec succès');
@@ -129,11 +168,18 @@ class DossierMedicalManager extends Component
 
         // Charger les fiches liées aux factures du patient
         // Note: Les fiches sont liées au patient via les factures (fkidfacture)
-        $this->fichesPatient = Fichetraitement::where('fkidCabinet', Auth::user()->fkidcabinet)
+        $query = Fichetraitement::where('fkidCabinet', Auth::user()->fkidcabinet)
             ->where('IsSupprimer', 0)
             ->whereHas('facture', function($query) {
                 $query->where('IDPatient', $this->patientId);
-            })
+            });
+        
+        // Si une facture spécifique est sélectionnée, filtrer par cette facture
+        if ($this->factureId) {
+            $query->where('fkidfacture', $this->factureId);
+        }
+        
+        $this->fichesPatient = $query
             ->with(['facture.patient', 'acte', 'medecin'])
             ->orderBy('dateTraite', 'desc')
             ->orderBy('Ordre', 'asc')
@@ -163,6 +209,12 @@ class DossierMedicalManager extends Component
         }
         $this->loadFichesPatient();
         $this->loadFacturesPatient();
+    }
+
+    public function updatedFactureId()
+    {
+        // Recharger les fiches quand la facture change
+        $this->loadFichesPatient();
     }
 
     public function ajouterLigneVide()

@@ -47,17 +47,33 @@
                     {{-- Sélection de la facture --}}
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Facture</label>
-                        <select wire:model="factureId"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
-                            <option value="">Sélectionner une facture</option>
-                            @foreach($facturesPatient as $facture)
-                                <option value="{{ $facture['Idfacture'] }}">
-                                    {{ $facture['Nfacture'] ?? 'N°' . $facture['Idfacture'] }} - 
-                                    {{ \Carbon\Carbon::parse($facture['DtFacture'])->format('d/m/Y') }} - 
-                                    {{ number_format($facture['TotFacture'] ?? 0, 2) }} MRU
-                                </option>
-                            @endforeach
-                        </select>
+                        @if($factureLocked && $factureId)
+                            {{-- Afficher la facture en lecture seule si elle est verrouillée --}}
+                            @php
+                                $factureDisplay = $factureLockedData ?? collect($facturesPatient)->firstWhere('Idfacture', $factureId);
+                            @endphp
+                            <div class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-700">
+                                {{ $factureDisplay['Nfacture'] ?? 'N°' . $factureId }} - 
+                                @if(isset($factureDisplay['DtFacture']))
+                                    {{ is_string($factureDisplay['DtFacture']) ? \Carbon\Carbon::parse($factureDisplay['DtFacture'])->format('d/m/Y') : $factureDisplay['DtFacture']->format('d/m/Y') }} - 
+                                @endif
+                                {{ number_format($factureDisplay['TotFacture'] ?? 0, 2) }} MRU
+                            </div>
+                            <input type="hidden" wire:model="factureId">
+                        @else
+                            {{-- Select normal si la facture n'est pas verrouillée --}}
+                            <select wire:model="factureId"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <option value="">Sélectionner une facture</option>
+                                @foreach($facturesPatient as $facture)
+                                    <option value="{{ $facture['Idfacture'] }}">
+                                        {{ $facture['Nfacture'] ?? 'N°' . $facture['Idfacture'] }} - 
+                                        {{ \Carbon\Carbon::parse($facture['DtFacture'])->format('d/m/Y') }} - 
+                                        {{ number_format($facture['TotFacture'] ?? 0, 2) }} MRU
+                                    </option>
+                                @endforeach
+                            </select>
+                        @endif
                         @error('factureId') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                         @if(count($facturesPatient) == 0)
                             <p class="text-xs text-gray-500 mt-1">Aucune facture disponible pour ce patient. Veuillez créer une facture d'abord.</p>
@@ -67,13 +83,25 @@
                     {{-- Sélection du médecin --}}
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Médecin</label>
-                        <select wire:model="medecinId"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
-                            <option value="">Sélectionner un médecin</option>
-                            @foreach($medecins as $medecin)
-                                <option value="{{ $medecin->idMedecin }}">{{ $medecin->Nom }}</option>
-                            @endforeach
-                        </select>
+                        @if($medecinLocked && $medecinId)
+                            {{-- Afficher le médecin en lecture seule si il est verrouillé --}}
+                            @php
+                                $medecinDisplay = $medecinLockedData ?? collect($medecins)->firstWhere('idMedecin', $medecinId);
+                            @endphp
+                            <div class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-700">
+                                {{ is_array($medecinDisplay) ? ($medecinDisplay['Nom'] ?? 'Médecin') : ($medecinDisplay->Nom ?? 'Médecin') }}
+                            </div>
+                            <input type="hidden" wire:model="medecinId">
+                        @else
+                            {{-- Select normal si le médecin n'est pas verrouillé --}}
+                            <select wire:model="medecinId"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <option value="">Sélectionner un médecin</option>
+                                @foreach($medecins as $medecin)
+                                    <option value="{{ $medecin->idMedecin }}">{{ $medecin->Nom }}</option>
+                                @endforeach
+                            </select>
+                        @endif
                         @error('medecinId') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                     </div>
 

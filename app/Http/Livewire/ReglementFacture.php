@@ -46,6 +46,10 @@ class ReglementFacture extends Component
     public $selectedMedecinId = null;
     public $medecins = [];
     public $searchMedecin = '';
+    public $showDossierMedicalModal = false;
+    public $factureIdForDossier = null;
+    public $factureDossier = null;
+    public $patientDossier = null;
 
     protected $listeners = [
         'patientSelected' => 'handlePatientSelected',
@@ -56,23 +60,29 @@ class ReglementFacture extends Component
     public function getFacturesProperty()
     {
         if ($this->selectedPatient) {
-            return Facture::where('IDPatient', $this->selectedPatient['ID'])
-                ->with([
-                    'medecin' => function($query) {
-                        $query->select('idMedecin', 'Nom');
-                    },
-                    'details' => function($query) {
-                        $query->select('idDetfacture', 'fkidfacture', 'Actes', 'PrixFacture', 'Quantite')
-                              ->orderBy('idDetfacture');
-                    }
-                ])
-                ->select([
-                    'Idfacture', 'Nfacture', 'FkidMedecinInitiateur', 'DtFacture',
-                    'TotFacture', 'ISTP', 'TXPEC', 'TotalPEC', 'ReglementPEC',
-                    'TotalfactPatient', 'TotReglPatient'
-                ])
-                ->orderBy('DtFacture', 'desc')
-                ->paginate(10, ['*'], 'page', $this->currentPage);
+            $patientId = is_array($this->selectedPatient) ? ($this->selectedPatient['ID'] ?? null) : ($this->selectedPatient->ID ?? null);
+            if (!$patientId) {
+                return null;
+            }
+            
+            // Utiliser un cache court (5 minutes) pour les factures car elles peuvent changer
+            $cacheKey = 'factures_patient_' . $patientId . '_page_' . $this->currentPage;
+            return Cache::remember($cacheKey, 300, function() use ($patientId) {
+                return Facture::where('IDPatient', $patientId)
+                    ->with([
+                        'medecin' => function($query) {
+                            $query->select('idMedecin', 'Nom');
+                        }
+                        // Ne pas charger les détails ici - ils seront chargés seulement quand une facture est sélectionnée
+                    ])
+                    ->select([
+                        'Idfacture', 'Nfacture', 'FkidMedecinInitiateur', 'DtFacture',
+                        'TotFacture', 'ISTP', 'TXPEC', 'TotalPEC', 'ReglementPEC',
+                        'TotalfactPatient', 'TotReglPatient'
+                    ])
+                    ->orderBy('DtFacture', 'desc')
+                    ->paginate(10, ['*'], 'page', $this->currentPage);
+            });
         }
         return null;
     }
@@ -80,17 +90,30 @@ class ReglementFacture extends Component
     public function mount($selectedPatient = null)
     {
         $this->showMedecinModal = false;
-        $this->modesPaiement = RefTypePaiement::all();
-        $this->actes = \App\Models\Acte::all();
+        
+        // Utiliser le cache pour les modes de paiement (rarement modifiés)
+        $cacheKeyModesPaiement = 'modes_paiement_' . Auth::user()->fkidcabinet;
+        $this->modesPaiement = Cache::remember($cacheKeyModesPaiement, 3600, function() {
+            return RefTypePaiement::all();
+        });
+        
+        // Utiliser le cache pour les actes (rarement modifiés)
+        $cacheKeyActes = 'actes_list_' . Auth::user()->fkidcabinet;
+        $this->actes = Cache::remember($cacheKeyActes, 3600, function() {
+            return \App\Models\Acte::where('Masquer', 0)->get();
+        });
+        
         $this->seance = 'Dent';
         if ($selectedPatient) {
             if (is_object($selectedPatient)) {
                 $selectedPatient = (array) $selectedPatient;
             }
             $this->selectedPatient = $selectedPatient;
-            $this->loadFactures();
+            // Ne pas charger les factures immédiatement, elles seront chargées lors du render
+            // $this->loadFactures();
         }
-        $this->loadFacturesEnAttente();
+        // Ne pas charger les factures en attente au mount (non utilisé dans le modal)
+        // $this->loadFacturesEnAttente();
     }
 
     public function handlePatientSelected($patient)
@@ -110,6 +133,14 @@ class ReglementFacture extends Component
     public function loadFactures()
     {
         if ($this->selectedPatient) {
+            $patientId = is_array($this->selectedPatient) ? ($this->selectedPatient['ID'] ?? null) : ($this->selectedPatient->ID ?? null);
+            // Invalider le cache pour toutes les pages de ce patient
+            if ($patientId) {
+                // Invalider toutes les pages possibles (on peut optimiser en gardant trace des pages)
+                for ($page = 1; $page <= 10; $page++) {
+                    Cache::forget('factures_patient_' . $patientId . '_page_' . $page);
+                }
+            }
             $this->factures = $this->getFacturesProperty();
         } else {
             $this->factures = null;
@@ -127,11 +158,18 @@ class ReglementFacture extends Component
         $facture = null;
         if ($this->factures) {
             $facture = $this->factures->firstWhere('Idfacture', $factureId);
+            // Si la facture est trouvée mais n'a pas les détails, les charger
+            if ($facture && !$facture->relationLoaded('details')) {
+                $facture->load('details');
+            }
         }
         
         if (!$facture) {
             // Fallback : charger la facture si elle n'est pas dans la pagination actuelle
             $facture = Facture::with(['medecin', 'details'])->find($factureId);
+        } elseif ($facture && !$facture->relationLoaded('details')) {
+            // Charger les détails si pas déjà chargés
+            $facture->load('details');
         }
         
         if ($facture) {
@@ -488,6 +526,24 @@ class ReglementFacture extends Component
             ->get();
     }
 
+    public function openDossierMedicalModal($factureId)
+    {
+        $this->factureIdForDossier = $factureId;
+        $this->factureDossier = Facture::with(['patient', 'medecin'])->find($factureId);
+        if ($this->factureDossier && $this->factureDossier->patient) {
+            $this->patientDossier = $this->factureDossier->patient;
+        }
+        $this->showDossierMedicalModal = true;
+    }
+
+    public function closeDossierMedicalModal()
+    {
+        $this->showDossierMedicalModal = false;
+        $this->factureIdForDossier = null;
+        $this->factureDossier = null;
+        $this->patientDossier = null;
+    }
+
     public function createFactureVide($medecinId = null)
     {
         try {
@@ -547,19 +603,19 @@ class ReglementFacture extends Component
         $isDocteur = ($user->IdClasseUser ?? null) == 2;
         $isDocteurProprietaire = ($user->IdClasseUser ?? null) == 3;
 
-        // Charger les factures seulement si nécessaire
+        // Charger les factures seulement si nécessaire et si le patient est sélectionné
         $factures = null;
-        if ($this->selectedPatient && !$this->factures) {
-            $this->factures = $this->getFacturesProperty();
-            $factures = $this->factures;
-        } elseif ($this->factures) {
+        if ($this->selectedPatient) {
+            if (!$this->factures) {
+                $this->factures = $this->getFacturesProperty();
+            }
             $factures = $this->factures;
         }
 
         return view('livewire.reglement-facture', [
             'isDocteur' => $isDocteur,
             'isDocteurProprietaire' => $isDocteurProprietaire,
-            'facturesEnAttente' => $this->facturesEnAttente,
+            'facturesEnAttente' => $this->facturesEnAttente ?? collect(),
             'factures' => $factures
         ]);
     }

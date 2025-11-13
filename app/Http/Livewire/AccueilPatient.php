@@ -53,7 +53,6 @@ class AccueilPatient extends Component
     public $showConsultation = false;
     public $showReglement = false;
     public $showRendezVous = false;
-    public $showDossierMedical = false;
     
     // Onglet actif pour le modal RDV
     public $activeRdvTab = 'create';
@@ -89,7 +88,6 @@ class AccueilPatient extends Component
         'refreshReminders' => 'calculateRdvRemindersCount',
         'ordonnanceCreated' => 'handleOrdonnanceCreated',
         'fermerOrdonnanceModal' => 'fermerOrdonnanceModal',
-        'fermerDossierMedicalModal' => 'fermerDossierMedicalModal',
         'fermerConsultationModal' => 'fermerConsultationModal',
         'fermerReglementModal' => 'fermerReglementModal',
         'fermerRendezVousModal' => 'fermerRendezVousModal',
@@ -250,7 +248,6 @@ class AccueilPatient extends Component
         $this->showConsultation = false;
         $this->showReglement = false;
         $this->showRendezVous = false;
-        $this->showDossierMedical = false;
     }
 
     public function setAction($action)
@@ -285,7 +282,6 @@ class AccueilPatient extends Component
         $this->showDepenses = false;
         $this->showStatistiques = false;
         $this->showOrdonnanceModal = false;
-        $this->showDossierMedical = false;
         $this->showReglement = false;
         $this->showRendezVous = false;
         
@@ -318,7 +314,6 @@ class AccueilPatient extends Component
         $this->showDepenses = false;
         $this->showStatistiques = false;
         $this->showOrdonnanceModal = false;
-        $this->showDossierMedical = false;
         $this->showConsultation = false;
         $this->showRendezVous = false;
         
@@ -351,7 +346,6 @@ class AccueilPatient extends Component
         $this->showDepenses = false;
         $this->showStatistiques = false;
         $this->showOrdonnanceModal = false;
-        $this->showDossierMedical = false;
         $this->showConsultation = false;
         $this->showReglement = false;
         
@@ -368,36 +362,6 @@ class AccueilPatient extends Component
         $this->showRendezVous = false;
     }
 
-    public function showDossierMedical()
-    {
-        if (!$this->selectedPatient) return;
-        
-        // Fermer les autres modals mais garder le menu patient ouvert
-        $this->showAssureurModal = false;
-        $this->showListeActesModal = false;
-        $this->showUsersModal = false;
-        $this->showMedecinsModal = false;
-        $this->showTypePaiementModal = false;
-        $this->showCreateRdvModal = false;
-        $this->showCreatePatientModal = false;
-        $this->showCaisseOperations = false;
-        $this->showDepenses = false;
-        $this->showStatistiques = false;
-        $this->showOrdonnanceModal = false;
-        
-        // Ouvrir le modal dossier médical
-        $this->showDossierMedical = true;
-        $this->showPatientMenu = true;
-        
-        // Forcer le re-render
-        $this->dispatchBrowserEvent('dossier-medical-modal-opened');
-    }
-
-    public function fermerDossierMedicalModal()
-    {
-        $this->showDossierMedical = false;
-    }
-
     public function setPatient($patient)
     {
         $this->selectedPatient = $patient;
@@ -409,10 +373,19 @@ class AccueilPatient extends Component
         $this->showConsultation = false;
         $this->showReglement = false;
         $this->showRendezVous = false;
-        $this->showDossierMedical = false;
         
         // Réinitialiser l'état sans affecter le modal de création de rendez-vous
         $this->resetState();
+    }
+
+    public function clearSelectedPatient()
+    {
+        $this->selectedPatient = null;
+        $this->showPatientMenu = false;
+        $this->showConsultation = false;
+        $this->showReglement = false;
+        $this->showRendezVous = false;
+        $this->showOrdonnanceModal = false;
     }
 
     // Gestionnaires d'événements
@@ -479,7 +452,6 @@ class AccueilPatient extends Component
         $this->showDepenses = false;
         $this->showStatistiques = false;
         $this->showOrdonnanceModal = false;
-        $this->showDossierMedical = false;
         $this->showConsultation = false;
         $this->showReglement = false;
         $this->showRendezVous = false;
@@ -511,7 +483,6 @@ class AccueilPatient extends Component
         $this->showCaisseOperations = false;
         $this->showStatistiques = false;
         $this->showOrdonnanceModal = false;
-        $this->showDossierMedical = false;
         $this->showConsultation = false;
         $this->showReglement = false;
         $this->showRendezVous = false;
@@ -595,7 +566,6 @@ class AccueilPatient extends Component
         $this->showCaisseOperations = false;
         $this->showDepenses = false;
         $this->showOrdonnanceModal = false;
-        $this->showDossierMedical = false;
         $this->showConsultation = false;
         $this->showReglement = false;
         $this->showRendezVous = false;

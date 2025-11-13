@@ -39,7 +39,7 @@
 
     <!-- Liste des factures -->
     @if($factures)
-    <div class="mb-6">
+    <div class="mb-6" wire:loading.class="opacity-50">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold">Factures du patient</h2>
             <button wire:click="openMedecinModal" class="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors duration-200 flex items-center gap-2">
@@ -139,16 +139,21 @@
                                             </tr>
                                         </tbody>
                                     </table>
-                                    <div class="flex flex-row gap-2 justify-end mt-4">
-                                                                                 <button wire:click.stop="ouvrirReglementFacture({{ $facture->Idfacture }})" class="min-w-[120px] px-4 py-2 text-sm font-semibold bg-primary text-white rounded hover:bg-primary-dark transition-colors duration-200 flex items-center justify-center">
-                                             Payer
+                                    <div class="flex flex-row gap-2 justify-between mt-4">
+                                         <button wire:click.stop="openDossierMedicalModal({{ $facture->Idfacture }})" class="min-w-[150px] px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center gap-2">
+                                             <i class="fas fa-file-medical"></i> Dossier médical
                                          </button>
-                                         <button wire:click.stop="openAddActeForm({{ $facture->Idfacture }})" class="min-w-[150px] px-4 py-2 text-sm font-semibold bg-primary text-white rounded hover:bg-primary-dark transition-colors duration-200 flex items-center justify-center gap-2">
-                                             <i class="fas fa-plus"></i> Ajouter un acte
-                                         </button>
-                                         <a href="{{ route('consultations.facture-patient', $facture->Idfacture) }}" target="_blank" class="min-w-[120px] px-4 py-2 text-sm font-semibold bg-gray-700 text-white rounded hover:bg-gray-800 transition-colors duration-200 flex items-center justify-center gap-2">
-                                             <i class="fas fa-print"></i> Imprimer
-                                         </a>
+                                         <div class="flex flex-row gap-2">
+                                             <button wire:click.stop="ouvrirReglementFacture({{ $facture->Idfacture }})" class="min-w-[120px] px-4 py-2 text-sm font-semibold bg-primary text-white rounded hover:bg-primary-dark transition-colors duration-200 flex items-center justify-center">
+                                                 Payer
+                                             </button>
+                                             <button wire:click.stop="openAddActeForm({{ $facture->Idfacture }})" class="min-w-[150px] px-4 py-2 text-sm font-semibold bg-primary text-white rounded hover:bg-primary-dark transition-colors duration-200 flex items-center justify-center gap-2">
+                                                 <i class="fas fa-plus"></i> Ajouter un acte
+                                             </button>
+                                             <a href="{{ route('consultations.facture-patient', $facture->Idfacture) }}" target="_blank" class="min-w-[120px] px-4 py-2 text-sm font-semibold bg-gray-700 text-white rounded hover:bg-gray-800 transition-colors duration-200 flex items-center justify-center gap-2">
+                                                 <i class="fas fa-print"></i> Imprimer
+                                             </a>
+                                         </div>
                                     </div>
                                 </div>
                                                                  <div wire:loading wire:target="selectionnerFacture" class="text-center py-4">
@@ -392,6 +397,41 @@
                         <button type="button" wire:click="$set('showMedecinModal', false)" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors duration-200">
                             Annuler
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Modal Dossier Médical --}}
+    @if($showDossierMedicalModal && $patientDossier)
+        <div class="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full bg-black bg-opacity-50">
+            <div class="relative p-4 w-full max-w-6xl max-h-full">
+                <!-- Modal content -->
+                <div class="relative bg-white rounded-lg shadow-sm">
+                    <!-- Modal header -->
+                    <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t border-gray-200">
+                        <h3 class="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                            <i class="fas fa-folder-medical text-primary"></i>
+                            <span>Dossier Médical</span>
+                            @if($patientDossier)
+                            <span class="text-sm font-normal text-gray-600 ml-2">
+                                - {{ is_array($patientDossier) ? ($patientDossier['NomPatient'] ?? $patientDossier['Nom'] ?? 'Patient') : ($patientDossier->NomPatient ?? $patientDossier->Nom ?? 'Patient') }}
+                            </span>
+                            @endif
+                        </h3>
+                        <button type="button" 
+                                wire:click="closeDossierMedicalModal"
+                                class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center">
+                            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                            </svg>
+                            <span class="sr-only">Fermer</span>
+                        </button>
+                    </div>
+                    <!-- Modal body -->
+                    <div class="p-4 md:p-5 space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
+                        <livewire:dossier-medical-manager wire:key="dossier-medical-manager-modal-{{ is_array($patientDossier) ? ($patientDossier['ID'] ?? '') : ($patientDossier->ID ?? '') }}-{{ $factureIdForDossier }}" :patient="$patientDossier" :facture="$factureDossier" :medecin="$factureDossier->medecin ?? null" />
                     </div>
                 </div>
             </div>
