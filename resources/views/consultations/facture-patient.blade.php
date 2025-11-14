@@ -113,26 +113,60 @@
             @endif
         </table>
     </div>
-    <table class="details-table">
-        <thead>
-        <tr>
-            <th>Traitement</th>
-            <th>Qté</th>
-            <th>P.U</th>
-            <th>Sous Total (MRU)</th>
-        </tr>
-        </thead>
-        <tbody>
-        @foreach($facture->details as $detail)
-            <tr>
-                <td>{{ $detail->Actes }}</td>
-                <td>{{ $detail->Quantite }}</td>
-                <td>{{ number_format($detail->PrixFacture, 2) }}</td>
-                <td>{{ number_format($detail->PrixFacture * $detail->Quantite, 2) }}</td>
-            </tr>
+    @php
+        $detailsGroupes = $facture->getDetailsGroupesParType();
+    @endphp
+    
+    @if(count($detailsGroupes) > 1)
+        {{-- Affichage par sections si plusieurs types --}}
+        @foreach($detailsGroupes as $section => $details)
+            <div class="section-header" style="margin-top: 15px; margin-bottom: 10px; font-weight: bold; font-size: 14px; color: #333; border-bottom: 2px solid #007bff; padding-bottom: 5px;">
+                {{ $section }}
+            </div>
+            <table class="details-table" style="margin-bottom: 20px;">
+                <thead>
+                <tr>
+                    <th>Traitement</th>
+                    <th>Qté</th>
+                    <th>P.U</th>
+                    <th>Sous Total (MRU)</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach($details as $detail)
+                    <tr>
+                        <td>{{ $detail->Actes }}</td>
+                        <td>{{ $detail->Quantite }}</td>
+                        <td>{{ number_format($detail->PrixFacture, 2) }}</td>
+                        <td>{{ number_format($detail->PrixFacture * $detail->Quantite, 2) }}</td>
+                    </tr>
+                @endforeach
+                </tbody>
+            </table>
         @endforeach
-        </tbody>
-    </table>
+    @else
+        {{-- Affichage simple si un seul type ou pas de type --}}
+        <table class="details-table">
+            <thead>
+            <tr>
+                <th>Traitement</th>
+                <th>Qté</th>
+                <th>P.U</th>
+                <th>Sous Total (MRU)</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach($facture->details as $detail)
+                <tr>
+                    <td>{{ $detail->Actes }}</td>
+                    <td>{{ $detail->Quantite }}</td>
+                    <td>{{ number_format($detail->PrixFacture, 2) }}</td>
+                    <td>{{ number_format($detail->PrixFacture * $detail->Quantite, 2) }}</td>
+                </tr>
+            @endforeach
+            </tbody>
+        </table>
+    @endif
     <table class="totaux-table" id="totauxTable">
         <tr>
             <td>Total {{ strtolower($facture->Type ?: 'facture') }}</td>

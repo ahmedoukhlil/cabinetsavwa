@@ -97,16 +97,49 @@
             </tr>
         </table>
     </div>
-    <table class="details-table">
-        <thead>
-        <tr>
-            <th>Acte</th>
-            <th>Quantité</th>
-            <th>Prix unitaire</th>
-            <th>Total</th>
-        </tr>
-        </thead>
-        <tbody>
+    @php
+        $detailsGroupes = $facture->getDetailsGroupesParType();
+    @endphp
+    
+    @if(count($detailsGroupes) > 1)
+        {{-- Affichage par sections si plusieurs types --}}
+        @foreach($detailsGroupes as $section => $details)
+            <div class="section-header" style="margin-top: 15px; margin-bottom: 10px; font-weight: bold; font-size: 14px; color: #333; border-bottom: 2px solid #007bff; padding-bottom: 5px;">
+                {{ $section }}
+            </div>
+            <table class="details-table" style="margin-bottom: 20px;">
+                <thead>
+                <tr>
+                    <th>Acte</th>
+                    <th>Quantité</th>
+                    <th>Prix unitaire</th>
+                    <th>Total</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach($details as $detail)
+                    <tr>
+                        <td>{{ $detail->Actes ?? 'N/A' }}</td>
+                        <td>{{ $detail->Quantite ?? 1 }}</td>
+                        <td>{{ number_format($detail->PrixFacture ?? 0, 2) }} MRU</td>
+                        <td>{{ number_format(($detail->PrixFacture ?? 0) * ($detail->Quantite ?? 1), 2) }} MRU</td>
+                    </tr>
+                @endforeach
+                </tbody>
+            </table>
+        @endforeach
+    @else
+        {{-- Affichage simple si un seul type ou pas de type --}}
+        <table class="details-table">
+            <thead>
+            <tr>
+                <th>Acte</th>
+                <th>Quantité</th>
+                <th>Prix unitaire</th>
+                <th>Total</th>
+            </tr>
+            </thead>
+            <tbody>
             @foreach($facture->details as $detail)
                 <tr>
                     <td>{{ $detail->Actes ?? 'N/A' }}</td>
@@ -115,8 +148,9 @@
                     <td>{{ number_format(($detail->PrixFacture ?? 0) * ($detail->Quantite ?? 1), 2) }} MRU</td>
                 </tr>
             @endforeach
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    @endif
     <table class="totaux-table">
         <tr>
             <td>Total consultation</td>

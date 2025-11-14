@@ -8,7 +8,7 @@
     <!-- Formulaire d'ajout de médicament -->
     <div class="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
         <h3 class="text-lg font-semibold text-green-800 mb-4">Ajouter un médicament</h3>
-        <form wire:submit.prevent="save" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
+        <form wire:submit.prevent="save" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <div>
                 <label for="libelleMedic" class="block text-sm font-medium text-gray-700 mb-1">Libellé *</label>
                 <input type="text" wire:model.defer="libelleMedic" id="libelleMedic" 
@@ -26,6 +26,13 @@
                     @endforeach
                 </select>
                 @error('fkidtype') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+            </div>
+            <div>
+                <label for="prixRef" class="block text-sm font-medium text-gray-700 mb-1">Prix de référence</label>
+                <input type="number" step="0.01" wire:model.defer="prixRef" id="prixRef" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                       placeholder="0.00" min="0">
+                @error('prixRef') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
             </div>
             <div class="flex gap-2">
                 <button type="submit" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
@@ -60,6 +67,7 @@
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Libellé</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prix de référence</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
@@ -88,6 +96,9 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ number_format($medicament->PrixRef ?? 0, 2) }} MRU
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 <button wire:click="openModal({{ $medicament->IDMedic }})" 
                                         class="text-blue-600 hover:text-blue-800 mr-3">Modifier</button>
                                 <button wire:click="confirmDelete({{ $medicament->IDMedic }})" 
@@ -96,7 +107,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="px-4 py-2 text-center text-gray-400">Aucun médicament trouvé</td>
+                            <td colspan="4" class="px-4 py-2 text-center text-gray-400">Aucun médicament trouvé</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -130,6 +141,11 @@
                             @endforeach
                         </select>
                         @error('fkidtype') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    </div>
+                    <div class="mb-4">
+                        <label for="prixRef" class="block text-sm font-medium text-gray-700">Prix de référence</label>
+                        <input type="number" step="0.01" wire:model.defer="prixRef" id="prixRef" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-primary focus:ring-primary" placeholder="0.00" min="0">
+                        @error('prixRef') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>
                     <div class="mt-6 flex justify-end space-x-3">
                         <button type="button" wire:click="closeModal" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">Annuler</button>

@@ -50,10 +50,20 @@ class ReglementFacture extends Component
     public $factureIdForDossier = null;
     public $factureDossier = null;
     public $patientDossier = null;
+    
+    // Propriétés pour médicaments/analyses/radios
+    public $showAddMedicamentForm = false;
+    public $selectedMedicamentId = '';
+    public $selectedMedicamentType = ''; // 'medicament', 'analyse', 'radio'
+    public $prixReferenceMedicament;
+    public $prixFactureMedicament;
+    public $quantiteMedicament = 1;
+    public $seanceMedicament;
 
     protected $listeners = [
         'patientSelected' => 'handlePatientSelected',
         'acteSelected' => 'handleActeSelected',
+        'medicamentSelected' => 'handleMedicamentSelected',
         'closeModal' => 'closeAddActeForm'
     ];
 
@@ -302,6 +312,153 @@ class ReglementFacture extends Component
         $this->acteSelectionne = false;
     }
 
+    public function resetAddMedicamentForm()
+    {
+        $this->selectedMedicamentId = '';
+        $this->selectedMedicamentType = '';
+        $this->prixReferenceMedicament = null;
+        $this->prixFactureMedicament = null;
+        $this->quantiteMedicament = 1;
+        $this->seanceMedicament = '';
+    }
+
+    public function updatedSelectedMedicamentType($value)
+    {
+        // Réinitialiser la sélection du médicament quand on change de type
+        $this->selectedMedicamentId = '';
+        $this->prixReferenceMedicament = null;
+        $this->prixFactureMedicament = null;
+    }
+
+    public function handleMedicamentSelected($id, $prixRef, $fkidtype)
+    {
+        $this->selectedMedicamentId = $id;
+        $this->selectedMedicamentType = (string)$fkidtype;
+        $this->prixReferenceMedicament = $prixRef;
+        $this->prixFactureMedicament = $prixRef;
+    }
+
+    public function updatedSelectedMedicamentId($value)
+    {
+        if (empty($value)) {
+            $this->prixReferenceMedicament = null;
+            $this->prixFactureMedicament = null;
+            return;
+        }
+
+        $medicamentId = (int) $value;
+        $medicament = \App\Models\Medicament::find($medicamentId);
+        
+        if ($medicament) {
+            $this->prixReferenceMedicament = $medicament->PrixRef ?? 0;
+            $this->prixFactureMedicament = $medicament->PrixRef ?? 0;
+        } else {
+            $this->prixReferenceMedicament = null;
+            $this->prixFactureMedicament = null;
+        }
+    }
+
+    public function selectMedicament($id, $type)
+    {
+        if (!$id) {
+            $this->resetAddMedicamentForm();
+            return;
+        }
+
+        $medicament = \App\Models\Medicament::find($id);
+        if ($medicament && $medicament->fkidtype == $type) {
+            $this->selectedMedicamentId = $medicament->IDMedic;
+            $this->selectedMedicamentType = $type;
+            $this->prixReferenceMedicament = 0;
+            $this->prixFactureMedicament = 0;
+        } else {
+            $this->resetAddMedicamentForm();
+        }
+    }
+
+    public function saveMedicamentToFacture()
+    {
+        $this->validate([
+            'selectedMedicamentId' => 'required|exists:medicaments,IDMedic',
+            'selectedMedicamentType' => 'required|in:1,2,3',
+            'prixFactureMedicament' => 'required|numeric|min:0',
+            'quantiteMedicament' => 'required|integer|min:1',
+        ], [
+            'selectedMedicamentType.required' => 'Veuillez sélectionner un type d\'opération',
+            'selectedMedicamentId.required' => 'Veuillez sélectionner un item',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $medicament = \App\Models\Medicament::find($this->selectedMedicamentId);
+            
+            // Convertir selectedMedicamentType en integer pour la comparaison
+            $typeInt = (int) $this->selectedMedicamentType;
+            
+            if (!$medicament || $medicament->fkidtype != $typeInt) {
+                throw new \Exception('Médicament non trouvé ou type incorrect');
+            }
+
+            $isAct = $medicament->fkidtype + 1; // 2=Médicament, 3=Analyse, 4=Radio
+
+            \App\Models\Detailfacturepatient::create([
+                'fkidfacture' => $this->factureIdForActe,
+                'DtAjout' => now(),
+                'Actes' => $medicament->LibelleMedic,
+                'PrixRef' => $this->prixReferenceMedicament ?? 0,
+                'PrixFacture' => $this->prixFactureMedicament,
+                'Quantite' => $this->quantiteMedicament,
+                'fkidmedicament' => $this->selectedMedicamentId,
+                'IsAct' => $isAct,
+                'fkidMedecin' => $this->factureSelectionnee->FkidMedecinInitiateur ?? 1,
+                'fkidcabinet' => Auth::user()->fkidcabinet ?? 1,
+                'ActesArab' => 'NR',
+                'Dents' => $this->seanceMedicament ?: 'Med',
+            ]);
+
+            $facture = \App\Models\Facture::find($this->factureIdForActe);
+            $prixFactureItem = $this->prixFactureMedicament * $this->quantiteMedicament;
+            $txpec = $facture->TXPEC ?? 0;
+            $nouveauTotFacture = ($facture->TotFacture ?? 0) + $prixFactureItem;
+            $montantPEC = $prixFactureItem * $txpec;
+            $totalPEC = ($facture->TotalPEC ?? 0) + $montantPEC;
+            $totalfactPatient = $nouveauTotFacture - $totalPEC;
+            $facture->TotFacture = $nouveauTotFacture;
+            $facture->TotalPEC = $totalPEC;
+            $facture->TotalfactPatient = $totalfactPatient;
+            $facture->save();
+
+            DB::commit();
+            $this->showAddMedicamentForm = false;
+            $typeLabel = match($medicament->fkidtype) {
+                1 => 'Médicament',
+                2 => 'Analyse',
+                3 => 'Radio',
+                default => 'Item'
+            };
+            session()->flash('message', $typeLabel . ' ajouté avec succès.');
+            $this->loadFactures();
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            session()->flash('error', 'Une erreur est survenue : ' . $e->getMessage());
+        }
+    }
+
+    public function openAddMedicamentForm($factureId)
+    {
+        $this->factureIdForActe = $factureId;
+        $this->resetAddMedicamentForm();
+        $this->showAddMedicamentForm = true;
+    }
+
+    public function closeAddMedicamentForm()
+    {
+        $this->showAddMedicamentForm = false;
+        $this->resetAddMedicamentForm();
+    }
+
     public function updatedSelectedActeId($value)
     {
         if (empty($value)) {
@@ -375,7 +532,7 @@ class ReglementFacture extends Component
 
             // Mise à jour de la facture uniquement pour l'acte sélectionné
             $facture = \App\Models\Facture::find($this->factureIdForActe);
-            $prixFactureActe = $this->prixFacture;
+            $prixFactureActe = $this->prixFacture * $this->quantite;
             $txpec = $facture->TXPEC ?? 0;
             $nouveauTotFacture = ($facture->TotFacture ?? 0) + $prixFactureActe;
             $montantPEC = $prixFactureActe * $txpec;

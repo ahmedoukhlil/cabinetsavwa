@@ -147,9 +147,14 @@
                                              <button wire:click.stop="ouvrirReglementFacture({{ $facture->Idfacture }})" class="min-w-[120px] px-4 py-2 text-sm font-semibold bg-primary text-white rounded hover:bg-primary-dark transition-colors duration-200 flex items-center justify-center">
                                                  Payer
                                              </button>
-                                             <button wire:click.stop="openAddActeForm({{ $facture->Idfacture }})" class="min-w-[150px] px-4 py-2 text-sm font-semibold bg-primary text-white rounded hover:bg-primary-dark transition-colors duration-200 flex items-center justify-center gap-2">
-                                                 <i class="fas fa-plus"></i> Ajouter un acte
-                                             </button>
+                                             <div class="flex flex-wrap gap-2">
+                                                 <button wire:click.stop="openAddActeForm({{ $facture->Idfacture }})" class="min-w-[150px] px-4 py-2 text-sm font-semibold bg-primary text-white rounded hover:bg-primary-dark transition-colors duration-200 flex items-center justify-center gap-2">
+                                                     <i class="fas fa-plus"></i> Ajouter un acte
+                                                 </button>
+                                                 <button wire:click.stop="openAddMedicamentForm({{ $facture->Idfacture }})" class="min-w-[150px] px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center gap-2">
+                                                     <i class="fas fa-pills"></i> Médicament/Analyse/Radio
+                                                 </button>
+                                             </div>
                                              <a href="{{ route('consultations.facture-patient', $facture->Idfacture) }}" target="_blank" class="min-w-[120px] px-4 py-2 text-sm font-semibold bg-gray-700 text-white rounded hover:bg-gray-800 transition-colors duration-200 flex items-center justify-center gap-2">
                                                  <i class="fas fa-print"></i> Imprimer
                                              </a>
@@ -349,6 +354,106 @@
                                                  <button type="button" wire:click="closeAddActeForm" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors duration-200">
                              Fermer
                          </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Modal pour ajouter médicament/analyse/radio -->
+    @if($showAddMedicamentForm && $factureIdForActe)
+        <div class="fixed inset-0 z-50 overflow-y-auto">
+            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+                </div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+                    <!-- Header harmonisé avec l'application -->
+                    <div class="p-6 rounded-t-lg text-white shadow bg-primary">
+                        <h2 class="text-2xl font-bold">Ajouter un médicament/analyse/radio à la facture</h2>
+                        <p class="text-primary-light mt-1">Facture N° {{ $factures->firstWhere('id', $factureIdForActe)['numero'] ?? '' }}</p>
+                    </div>
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-b-lg">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Ajouter un médicament/analyse/radio à la facture</h3>
+                        <form wire:submit.prevent="saveMedicamentToFacture" wire:key="form-add-medicament-{{ $factureIdForActe }}">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Type d'opération</label>
+                                    <select wire:model="selectedMedicamentType" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm bg-white text-gray-900 focus:border-primary focus:ring-primary">
+                                        <option value="">Sélectionner un type</option>
+                                        <option value="1">Médicament</option>
+                                        <option value="2">Analyse</option>
+                                        <option value="3">Radio</option>
+                                    </select>
+                                    @error('selectedMedicamentType') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                </div>
+                                @if($selectedMedicamentType)
+                                    @php
+                                        $typeLabel = match($selectedMedicamentType) {
+                                            '1' => 'Médicament',
+                                            '2' => 'Analyse',
+                                            '3' => 'Radio',
+                                            default => 'Item'
+                                        };
+                                    @endphp
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ $typeLabel }}</label>
+                                        <livewire:medicament-search :fkidtype="$selectedMedicamentType" :key="'medicament-search-'.$factureIdForActe.'-'.$selectedMedicamentType" />
+                                        @error('selectedMedicamentId') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                    </div>
+                                @else
+                                    <div></div>
+                                @endif
+                                @if($selectedMedicamentId)
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Prix de référence</label>
+                                        <input type="number" wire:model="prixReferenceMedicament" step="0.01" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm bg-gray-50 text-gray-900" readonly>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Prix facturé</label>
+                                        <input type="number" wire:model="prixFactureMedicament" step="0.01" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm bg-white text-gray-900 focus:border-primary focus:ring-primary">
+                                    </div>
+                                    @php
+                                        $isAssure = $selectedPatient['Assureur'] ?? 0;
+                                        $txpec = $selectedPatient['TauxPEC'] ?? 0;
+                                        $prix = $prixFactureMedicament ?? 0;
+                                        $partPEC = ($isAssure && $txpec > 0) ? $prix * $txpec : 0;
+                                        $partPatient = ($isAssure && $txpec > 0) ? $prix * (1 - $txpec) : $prix;
+                                    @endphp
+                                    @if($isAssure && $txpec > 0)
+                                        <div class="flex gap-4">
+                                            <div class="w-1/2">
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Part PEC (assureur)</label>
+                                                <input type="text" value="{{ number_format($partPEC, 0, '', ' ') }} MRU" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-50 text-gray-900" readonly>
+                                            </div>
+                                            <div class="w-1/2">
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Part patient</label>
+                                                <input type="text" value="{{ number_format($partPatient, 0, '', ' ') }} MRU" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-50 text-gray-900" readonly>
+                                            </div>
+                                        </div>
+                                    @endif
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Quantité</label>
+                                        <input type="number" wire:model.defer="quantiteMedicament" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm bg-white text-gray-900 focus:border-primary focus:ring-primary" min="1">
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Séance (Dent)</label>
+                                        <input type="text" wire:model.defer="seanceMedicament" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm bg-white text-gray-900 focus:border-primary focus:ring-primary">
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="mt-6 flex justify-end">
+                                <button type="submit" class="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors duration-200">
+                                    Ajouter
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-lg">
+                        <button type="button" wire:click="closeAddMedicamentForm" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors duration-200">
+                            Fermer
+                        </button>
                     </div>
                 </div>
             </div>

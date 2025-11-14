@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $IDMedic
  * @property string $LibelleMedic
  * @property int $fkidtype
+ * @property float $PrixRef
  *
  * @package App\Models
  */
@@ -24,12 +25,14 @@ class Medicament extends Model
 	public $timestamps = false;
 
 	protected $casts = [
-		'fkidtype' => 'int'
+		'fkidtype' => 'int',
+		'PrixRef' => 'float'
 	];
 
 	protected $fillable = [
 		'LibelleMedic',
-		'fkidtype'
+		'fkidtype',
+		'PrixRef'
 	];
 
 	/**

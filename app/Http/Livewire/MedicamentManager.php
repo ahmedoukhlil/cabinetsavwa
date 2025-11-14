@@ -18,6 +18,7 @@ class MedicamentManager extends Component
     public $medicamentId;
     public $libelleMedic;
     public $fkidtype;
+    public $prixRef = 0;
 
     // Modals
     public $showModal = false;
@@ -29,6 +30,7 @@ class MedicamentManager extends Component
         return [
             'libelleMedic' => 'required|min:3',
             'fkidtype' => 'required|integer|in:1,2,3', // 1 = Médicament, 2 = Analyse, 3 = Radio
+            'prixRef' => 'nullable|numeric|min:0',
         ];
     }
 
@@ -61,6 +63,7 @@ class MedicamentManager extends Component
                 $this->medicamentId = $medicament->IDMedic;
                 $this->libelleMedic = $medicament->LibelleMedic;
                 $this->fkidtype = $medicament->fkidtype;
+                $this->prixRef = $medicament->PrixRef ?? 0;
             }
         }
         $this->showModal = true;
@@ -78,6 +81,7 @@ class MedicamentManager extends Component
         $data = [
             'LibelleMedic' => $this->libelleMedic,
             'fkidtype' => $this->fkidtype,
+            'PrixRef' => $this->prixRef ?? 0,
         ];
         if ($this->medicamentId) {
             $medicament = Medicament::find($this->medicamentId);
@@ -114,6 +118,7 @@ class MedicamentManager extends Component
         $this->medicamentId = null;
         $this->libelleMedic = '';
         $this->fkidtype = '';
+        $this->prixRef = 0;
     }
 
     public function render()

@@ -13,7 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('actes', function (Blueprint $table) {
+        if (!Schema::hasTable('actes')) {
+            Schema::create('actes', function (Blueprint $table) {
             $table->integer('ID', true);
             $table->string('Acte')->nullable();
             $table->double('PrixRef')->default(0);
@@ -23,7 +24,8 @@ return new class extends Migration
             $table->unsignedInteger('fkidassureur')->default(1)->index('Index_2');
             $table->string('ActeArab', 245)->default('NR');
             $table->unsignedInteger('Masquer')->default(0)->index('Index_3');
-        });
+            });
+        }
     }
 
     /**

@@ -106,7 +106,7 @@ class Facture extends Model
 
 	public function details()
 	{
-		return $this->hasMany(DetailFacturePatient::class, 'fkidfacture', 'Idfacture');
+		return $this->hasMany(Detailfacturepatient::class, 'fkidfacture', 'Idfacture');
 	}
 
 	public function medecin()
@@ -127,5 +127,63 @@ class Facture extends Model
 	public function reglements()
 	{
 		return $this->hasMany(Reglement::class, 'fkidFactBord', 'Idfacture');
+	}
+
+	/**
+	 * Grouper les détails de facture par type d'acte
+	 * Retourne un tableau avec les sections : Actes médicaux, Médicaments, Analyses, Radios
+	 */
+	public function getDetailsGroupesParType()
+	{
+		$details = $this->details()
+			->with(['acte.typeActe', 'medicament'])
+			->get();
+		
+		$groupes = [
+			'Actes médicaux' => [],
+			'Médicaments' => [],
+			'Analyses' => [],
+			'Radios' => [],
+			'Autres' => []
+		];
+
+		foreach ($details as $detail) {
+			$section = 'Autres';
+			
+			if ($detail->IsAct == 1 && $detail->acte) {
+				// C'est un acte
+				$typeActe = $detail->acte->typeActe->Type ?? null;
+				if ($typeActe) {
+					$typeActeLower = strtolower($typeActe);
+					if (strpos($typeActeLower, 'médicament') !== false || strpos($typeActeLower, 'medicament') !== false) {
+						$section = 'Actes médicaux';
+					} elseif (strpos($typeActeLower, 'analyse') !== false) {
+						$section = 'Analyses';
+					} elseif (strpos($typeActeLower, 'radio') !== false) {
+						$section = 'Radios';
+					} else {
+						$section = 'Actes médicaux'; // Par défaut pour les actes
+					}
+				} else {
+					$section = 'Actes médicaux'; // Par défaut si pas de type
+				}
+			} elseif ($detail->IsAct == 2 && $detail->medicament) {
+				// C'est un médicament
+				$section = 'Médicaments';
+			} elseif ($detail->IsAct == 3 && $detail->medicament) {
+				// C'est une analyse
+				$section = 'Analyses';
+			} elseif ($detail->IsAct == 4 && $detail->medicament) {
+				// C'est une radio
+				$section = 'Radios';
+			}
+
+			$groupes[$section][] = $detail;
+		}
+
+		// Retirer les sections vides
+		return array_filter($groupes, function($details) {
+			return count($details) > 0;
+		});
 	}
 }
