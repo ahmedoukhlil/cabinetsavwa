@@ -117,6 +117,29 @@
     </div>
     @php
         $detailsGroupes = $facture->getDetailsGroupesParType();
+        
+        // Recalculer le total réel à partir des détails
+        // Inclut TOUS les types : IsAct=1 (Actes), IsAct=2 (Médicaments), IsAct=3 (Analyses), IsAct=4 (Radios)
+        $totalReel = $facture->details->sum(function($detail) {
+            $prix = floatval($detail->PrixFacture ?? 0);
+            $quantite = floatval($detail->Quantite ?? 0);
+            return $prix * $quantite;
+        });
+        
+        // Recalculer TotalPEC et TotalfactPatient si ISTP == 1
+        $txpec = $facture->TXPEC ?? 0;
+        $totalPECReel = $facture->ISTP == 1 ? ($totalReel * $txpec) : 0;
+        $totalfactPatientReel = $facture->ISTP == 1 ? ($totalReel - $totalPECReel) : $totalReel;
+        
+        // Utiliser les totaux réels calculés ou ceux de la base de données
+        $totalFacture = $totalReel > 0 ? $totalReel : ($facture->TotFacture ?? 0);
+        $totalPEC = $totalPECReel > 0 ? $totalPECReel : ($facture->TotalPEC ?? 0);
+        $totalPatient = $totalfactPatientReel > 0 ? $totalfactPatientReel : ($facture->TotalfactPatient ?? 0);
+        
+        // Recalculer le reste à payer
+        $restePatient = $facture->ISTP == 1 
+            ? ($totalPatient - ($facture->TotReglPatient ?? 0))
+            : ($totalFacture - ($facture->TotReglPatient ?? 0));
     @endphp
     
     @if(count($detailsGroupes) > 1)
@@ -185,26 +208,26 @@
     <table class="totaux-table" id="totauxTable">
         <tr>
             <td>Total {{ strtolower($facture->Type ?: 'facture') }}</td>
-            <td>{{ number_format($facture->TotFacture, 2) }} MRU</td>
+            <td>{{ number_format($totalFacture, 2) }} MRU</td>
         </tr>
         <tbody id="detailsFacture" style="display: {{ $facture->Type === 'Facture' ? 'table-row-group' : 'none' }}">
             @if($facture->ISTP == 1)
                 <tr>
                     <td>Part assurance</td>
-                    <td>{{ number_format($facture->TotalPEC, 2) }} MRU</td>
+                    <td>{{ number_format($totalPEC, 2) }} MRU</td>
                 </tr>
                 <tr>
                     <td>Part patient</td>
-                    <td>{{ number_format($facture->TotalfactPatient, 2) }} MRU</td>
+                    <td>{{ number_format($totalPatient, 2) }} MRU</td>
                 </tr>
             @endif
             <tr>
                 <td>Total règlements</td>
-                <td>{{ number_format($facture->TotReglPatient, 2) }} MRU</td>
+                <td>{{ number_format($facture->TotReglPatient ?? 0, 2) }} MRU</td>
             </tr>
             <tr>
                 <td>Reste à payer</td>
-                <td>{{ number_format($facture->restePatient, 2) }} MRU</td>
+                <td>{{ number_format($restePatient, 2) }} MRU</td>
             </tr>
         </tbody>
     </table>

@@ -79,37 +79,29 @@ class ConsultationController extends Controller
             ];
         });
 
-        // Mettre en cache la facture avec ses relations (1h car peut être modifiée)
-        $facture = cache()->remember('facture_' . $factureId, 3600, function() use ($factureId) {
-            $facture = Facture::where('Idfacture', $factureId)
-                ->with([
-                    'patient' => function($query) {
-                        $query->select('ID', 'IdentifiantPatient', 'NomContact', 'Telephone1', 'IdentifiantAssurance', 'Assureur');
-                    },
-                    'medecin' => function($query) {
-                        $query->select('idMedecin', 'Nom', 'Contact');
-                    },
-                    'details' => function($query) {
-                        $query->select('idDetfacture', 'Actes', 'Quantite', 'PrixFacture', 'fkidfacture')
-                              ->orderBy('idDetfacture');
-                    },
-                    'patient.assureur' => function($query) {
-                        $query->select('IDAssureur', 'LibAssurance');
-                    }
-                ])
-                ->first();
+        // Charger la facture avec TOUS ses détails (actes, médicaments, analyses, radios)
+        // Ne pas utiliser de cache pour éviter les problèmes de données obsolètes
+        $facture = Facture::where('Idfacture', $factureId)
+            ->with([
+                'patient' => function($query) {
+                    $query->select('ID', 'IdentifiantPatient', 'NomContact', 'Telephone1', 'IdentifiantAssurance', 'Assureur');
+                },
+                'medecin' => function($query) {
+                    $query->select('idMedecin', 'Nom', 'Contact');
+                },
+                'details' => function($query) {
+                    // Charger TOUS les détails sans restriction de type
+                    $query->orderBy('idDetfacture');
+                },
+                'patient.assureur' => function($query) {
+                    $query->select('IDAssureur', 'LibAssurance');
+                }
+            ])
+            ->firstOrFail();
 
-            if (!$facture) {
-                throw new \Illuminate\Database\Eloquent\ModelNotFoundException();
-            }
-
-            return $facture;
-        });
-
-        // Vider le cache si les données du patient sont manquantes
+        // Vérifier que tous les détails sont bien chargés
         if (!$facture->patient) {
-            cache()->forget('facture_' . $factureId);
-            // Recharger la facture sans cache
+            // Recharger la facture si le patient est manquant
             $facture = Facture::with([
                 'patient' => function($query) {
                     $query->select('ID', 'IdentifiantPatient', 'NomContact', 'Telephone1', 'IdentifiantAssurance', 'Assureur');
@@ -117,17 +109,49 @@ class ConsultationController extends Controller
                 'medecin' => function($query) {
                     $query->select('idMedecin', 'Nom', 'Contact');
                 },
-                'details',
+                'details', // Charger tous les détails
                 'patient.assureur'
             ])->findOrFail($factureId);
         }
+        
+        // Vider le cache pour cette facture pour forcer le rechargement
+        cache()->forget('facture_' . $factureId);
+        cache()->forget('facture_montants_' . $factureId);
+        cache()->forget('facture_lettres_' . $factureId);
 
+        // Calculer le total réel à partir des détails
+        // Inclut TOUS les types : IsAct=1 (Actes), IsAct=2 (Médicaments), IsAct=3 (Analyses), IsAct=4 (Radios)
+        // Vérifier que tous les détails sont bien chargés
+        $totalReel = $facture->details->sum(function($detail) {
+            $prix = floatval($detail->PrixFacture ?? 0);
+            $quantite = floatval($detail->Quantite ?? 0);
+            $montant = $prix * $quantite;
+            return $montant;
+        });
+        
+        // Debug : vérifier le nombre de détails chargés
+        \Log::info('Calcul total facture', [
+            'facture_id' => $factureId,
+            'nb_details' => $facture->details->count(),
+            'total_reel' => $totalReel,
+            'details_types' => $facture->details->groupBy('IsAct')->map->count()
+        ]);
+        
+        // Recalculer TotalPEC et TotalfactPatient si ISTP == 1
+        $txpec = $facture->TXPEC ?? 0;
+        $totalPECReel = $facture->ISTP == 1 ? ($totalReel * $txpec) : 0;
+        $totalfactPatientReel = $facture->ISTP == 1 ? ($totalReel - $totalPECReel) : $totalReel;
+        
+        // Utiliser les totaux réels calculés ou ceux de la base de données
+        $totalFacture = $totalReel > 0 ? $totalReel : ($facture->TotFacture ?? 0);
+        
         // Pré-calculer et mettre en cache les montants (1h)
-        $montants = cache()->remember('facture_montants_' . $factureId, 3600, function() use ($facture) {
-            $restePEC = $facture->TotalPEC - $facture->ReglementPEC;
+        $montants = cache()->remember('facture_montants_' . $factureId, 3600, function() use ($facture, $totalFacture, $totalfactPatientReel, $totalPECReel) {
+            $totalPEC = $totalPECReel > 0 ? $totalPECReel : ($facture->TotalPEC ?? 0);
+            $restePEC = $totalPEC - ($facture->ReglementPEC ?? 0);
             $restePatient = $facture->ISTP == 1 
-                ? ($facture->TotalfactPatient - $facture->TotReglPatient)
-                : ($facture->TotFacture - $facture->TotReglPatient);
+                ? ($totalfactPatientReel - ($facture->TotReglPatient ?? 0))
+                : ($totalFacture - ($facture->TotReglPatient ?? 0));
 
             return [
                 'restePEC' => $restePEC,
@@ -135,9 +159,9 @@ class ConsultationController extends Controller
             ];
         });
 
-        // Mettre en cache la conversion en lettres (1h)
-        $facture->en_lettres = cache()->remember('facture_lettres_' . $factureId, 3600, function() use ($facture) {
-            return $this->numberToWords($facture->TotFacture ?? 0);
+        // Mettre en cache la conversion en lettres (1h) avec le total réel
+        $facture->en_lettres = cache()->remember('facture_lettres_' . $factureId, 3600, function() use ($totalFacture) {
+            return $this->numberToWords($totalFacture);
         });
 
         // Ajouter les montants calculés à la facture
