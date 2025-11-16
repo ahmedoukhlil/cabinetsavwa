@@ -26,6 +26,8 @@
         .details-table td { text-align: center; }
         .details-table th:first-child, .details-table td:first-child { text-align: left; }
         .details-table th:last-child, .details-table td:last-child { width: 40%; text-align: right; }
+        .details-table tfoot tr { background-color: #f4f6fa; font-weight: bold; }
+        .details-table tfoot td { border: 1px solid #222; }
         .totaux-table { width: 40%; border-collapse: collapse; margin-top: 0; margin-bottom: 0; margin-left: auto; }
         .totaux-table td { border: 1px solid #222; font-size: 12px; padding: 6px 8px; text-align: right; }
         .a5 .totaux-table td { font-size: 10px; padding: 4px 6px; }
@@ -133,15 +135,28 @@
                 </tr>
                 </thead>
                 <tbody>
+                @php
+                    $sousTotalSection = 0;
+                @endphp
                 @foreach($details as $detail)
+                    @php
+                        $sousTotalLigne = $detail->PrixFacture * $detail->Quantite;
+                        $sousTotalSection += $sousTotalLigne;
+                    @endphp
                     <tr>
                         <td>{{ $detail->Actes }}</td>
                         <td>{{ $detail->Quantite }}</td>
                         <td>{{ number_format($detail->PrixFacture, 2) }}</td>
-                        <td>{{ number_format($detail->PrixFacture * $detail->Quantite, 2) }}</td>
+                        <td>{{ number_format($sousTotalLigne, 2) }}</td>
                     </tr>
                 @endforeach
                 </tbody>
+                <tfoot>
+                <tr style="background-color: #f4f6fa; font-weight: bold;">
+                    <td colspan="3" style="text-align: right; padding-right: 15px;">Sous-total {{ $section }} :</td>
+                    <td style="text-align: right;">{{ number_format($sousTotalSection, 2) }} MRU</td>
+                </tr>
+                </tfoot>
             </table>
         @endforeach
     @else

@@ -21,6 +21,7 @@ class PatientManager extends Component
     public $showModal = false;
     public $isAssured = false;
     public $searchBy = 'all'; // all, name, nni, phone
+    public $creationOnly = false; // Si true, n'affiche que le formulaire de création
 
     // Propriétés pour le formulaire
     public $patientId;
@@ -45,6 +46,10 @@ class PatientManager extends Component
     public $selectedPatientId;
     public $paymentHistory = [];
 
+    protected $listeners = [
+        'openPatientCreateModal' => 'openModal',
+    ];
+
     public function rules()
     {
         return [
@@ -63,7 +68,7 @@ class PatientManager extends Component
             'dateNaissance' => 'nullable|date',
             'genre' => 'nullable|in:H,F',
             'telephone1' => 'required|min:8',
-            'telephone2' => 'nullable|min:8',
+            'telephone2' => 'nullable|min:8|max:255',
             'adresse' => 'nullable',
             'identifiantAssurance' => 'nullable|min:1',
             'assureur' => 'nullable|integer',
@@ -95,10 +100,16 @@ class PatientManager extends Component
         'classerSous.min' => 'La classification doit contenir au moins 2 caractères'
     ];
 
-    public function mount()
+    public function mount($creationOnly = false)
     {
+        $this->creationOnly = $creationOnly;
         $this->resetForm();
         $this->showInactive = false;
+        
+        // Si on est en mode création uniquement, ouvrir automatiquement le modal
+        if ($this->creationOnly) {
+            $this->openModal();
+        }
     }
 
     public function sortBy($field)
@@ -170,6 +181,11 @@ class PatientManager extends Component
     public function closeModal()
     {
         $this->showModal = false;
+        
+        // Si on est en mode création uniquement, fermer aussi le modal parent
+        if ($this->creationOnly) {
+            $this->emit('closeNouveauPatientModal');
+        }
     }
 
     public function save()
@@ -182,12 +198,12 @@ class PatientManager extends Component
             $data = [
                 'Nom' => $this->nom,
                 'Prenom' => $this->nom,
-                'NNI' => $this->nni,
-                'DtNaissance' => $this->dateNaissance,
-                'Genre' => $this->genre,
+                'NNI' => !empty($this->nni) ? $this->nni : null,
+                'DtNaissance' => !empty($this->dateNaissance) ? $this->dateNaissance : null,
+                'Genre' => !empty($this->genre) ? $this->genre : null,
                 'Telephone1' => $this->telephone1,
-                'Telephone2' => $this->telephone2,
-                'Adresse' => $this->adresse,
+                'Telephone2' => !empty($this->telephone2) ? $this->telephone2 : null,
+                'Adresse' => !empty($this->adresse) ? $this->adresse : null,
                 'IdentifiantAssurance' => $this->isAssured ? $this->identifiantAssurance : '',
                 'Assureur' => $this->isAssured ? $this->assureur : 1,
                 'MatriculeFonct' => $this->matriculeFonct,
@@ -217,6 +233,11 @@ class PatientManager extends Component
 
             $this->resetForm();
             $this->closeModal();
+            
+            // Si on est en mode création uniquement, fermer aussi le modal parent après succès
+            if ($this->creationOnly) {
+                $this->emit('closeNouveauPatientModal');
+            }
         } catch (\Exception $e) {
             \Log::error('Erreur création patient : ' . $e->getMessage());
             \Log::error('Stack trace : ' . $e->getTraceAsString());

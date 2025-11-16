@@ -33,7 +33,6 @@ class ReglementFacture extends Component
     public $prixReference;
     public $prixFacture;
     public $quantite = 1;
-    public $seance;
     public $factureIdForActe = null;
     public $actes = [];
     public $searchActe = '';
@@ -58,7 +57,6 @@ class ReglementFacture extends Component
     public $prixReferenceMedicament;
     public $prixFactureMedicament;
     public $quantiteMedicament = 1;
-    public $seanceMedicament;
 
     protected $listeners = [
         'patientSelected' => 'handlePatientSelected',
@@ -113,7 +111,6 @@ class ReglementFacture extends Component
             return \App\Models\Acte::where('Masquer', 0)->get();
         });
         
-        $this->seance = 'Dent';
         if ($selectedPatient) {
             if (is_object($selectedPatient)) {
                 $selectedPatient = (array) $selectedPatient;
@@ -308,7 +305,6 @@ class ReglementFacture extends Component
         $this->prixReference = null;
         $this->prixFacture = null;
         $this->quantite = 1;
-        $this->seance = 'Dent';
         $this->acteSelectionne = false;
     }
 
@@ -319,7 +315,6 @@ class ReglementFacture extends Component
         $this->prixReferenceMedicament = null;
         $this->prixFactureMedicament = null;
         $this->quantiteMedicament = 1;
-        $this->seanceMedicament = '';
     }
 
     public function updatedSelectedMedicamentType($value)
@@ -414,7 +409,7 @@ class ReglementFacture extends Component
                 'fkidMedecin' => $this->factureSelectionnee->FkidMedecinInitiateur ?? 1,
                 'fkidcabinet' => Auth::user()->fkidcabinet ?? 1,
                 'ActesArab' => 'NR',
-                'Dents' => $this->seanceMedicament ?: 'Med',
+                'Dents' => 'Med',
             ]);
 
             $facture = \App\Models\Facture::find($this->factureIdForActe);
@@ -430,14 +425,21 @@ class ReglementFacture extends Component
             $facture->save();
 
             DB::commit();
-            $this->showAddMedicamentForm = false;
+            
+            // Le formulaire reste ouvert pour permettre l'ajout d'autres items
+            $this->showAddMedicamentForm = true;
+            
             $typeLabel = match($medicament->fkidtype) {
                 1 => 'Médicament',
                 2 => 'Analyse',
                 3 => 'Radio',
                 default => 'Item'
             };
-            session()->flash('message', $typeLabel . ' ajouté avec succès.');
+            session()->flash('message', $typeLabel . ' ajouté avec succès. Vous pouvez continuer à ajouter d\'autres items.');
+            
+            // Réinitialiser les champs pour permettre l'ajout d'un nouvel item
+            $this->resetAddMedicamentForm();
+            
             $this->loadFactures();
 
         } catch (\Exception $e) {
@@ -511,7 +513,6 @@ class ReglementFacture extends Component
             'selectedActeId' => 'required|exists:actes,ID',
             'prixFacture' => 'required|numeric|min:0',
             'quantite' => 'required|integer|min:1',
-            'seance' => 'nullable|string|max:255',
         ]);
 
         try {
@@ -527,7 +528,7 @@ class ReglementFacture extends Component
                 'PrixFacture' => $this->prixFacture,
                 'Quantite' => $this->quantite,
                 'fkidacte' => $this->selectedActeId,
-                'Dents' => $this->seance ?: 'Dent',
+                'Dents' => 'Dent',
             ]);
 
             // Mise à jour de la facture uniquement pour l'acte sélectionné

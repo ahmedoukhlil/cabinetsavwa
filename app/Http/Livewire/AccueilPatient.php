@@ -30,6 +30,7 @@ class AccueilPatient extends Component
     public $showCreateRdvModal = false;
     public $showPatientListModal = false;
     public $showGestionPatientsModal = false;
+    public $showNouveauPatientModal = false;
     public $showActeModal = false;
     public $showAssureurModal = false;
     public $showCreatePatientModal = false;
@@ -82,6 +83,7 @@ class AccueilPatient extends Component
         'patientSelected' => 'setPatient',
         'patientCreated' => 'handlePatientCreated',
         'closeCreateModal' => 'closeCreateModal',
+        'closeNouveauPatientModal' => 'closeNouveauPatientModal',
         'assureurCreated' => 'handleAssureurCreated',
         'acteCreated' => 'handleActeCreated',
         'refreshData' => 'refreshCachedData',
@@ -219,6 +221,7 @@ class AccueilPatient extends Component
             'showCreateModal',
             'showPatientListModal',
             'showGestionPatientsModal',
+            'showNouveauPatientModal',
             'showActeModal',
             'showAssureurModal',
             'showCreatePatientModal',
@@ -440,6 +443,18 @@ class AccueilPatient extends Component
     public function closeGestionPatientsModal()
     {
         $this->showGestionPatientsModal = false;
+    }
+
+    public function openNouveauPatientModal()
+    {
+        $this->showNouveauPatientModal = true;
+        // Émettre un événement Livewire pour ouvrir le modal de création dans PatientManager
+        $this->emit('openPatientCreateModal');
+    }
+
+    public function closeNouveauPatientModal()
+    {
+        $this->showNouveauPatientModal = false;
     }
 
     public function showCreateRdv()

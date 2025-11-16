@@ -338,10 +338,6 @@
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Quantité</label>
                                     <input type="number" wire:model.defer="quantite" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm bg-white text-gray-900 focus:border-primary focus:ring-primary" min="1">
                                 </div>
-                                <div class="md:col-span-2">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Séance (Dent)</label>
-                                    <input type="text" wire:model.defer="seance" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm bg-white text-gray-900 focus:border-primary focus:ring-primary">
-                                </div>
                             </div>
                             <div class="mt-6 flex justify-end">
                                 <button type="submit" class="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors duration-200">
@@ -436,10 +432,6 @@
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Quantité</label>
                                         <input type="number" wire:model.defer="quantiteMedicament" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm bg-white text-gray-900 focus:border-primary focus:ring-primary" min="1">
-                                    </div>
-                                    <div class="md:col-span-2">
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Séance (Dent)</label>
-                                        <input type="text" wire:model.defer="seanceMedicament" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm bg-white text-gray-900 focus:border-primary focus:ring-primary">
                                     </div>
                                 @endif
                             </div>
