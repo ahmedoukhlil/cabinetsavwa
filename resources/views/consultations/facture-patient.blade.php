@@ -10,7 +10,8 @@
         .a5 { width: 148mm; min-height: 210mm; margin: auto; background: #fff; padding: 0 10mm 0 5mm; position: relative; box-sizing: border-box; }
         .facture-title { text-align: center; font-size: 18px; font-weight: bold; margin-top: 10px; margin-bottom: 28px; letter-spacing: 2px; }
         .a5 .facture-title { font-size: 15px; margin-bottom: 20px; }
-        .bloc-patient { margin: 0 0 10px 0; }
+        .bloc-patient { margin: 0 0 20px 0; }
+        .a5 .bloc-patient { margin: 0 0 15px 0; }
         .bloc-patient-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
         .bloc-patient-table td { padding: 2px 8px; font-size: 10px; }
         .a5 .bloc-patient-table td { font-size: 9px; padding: 1px 4px; }
@@ -124,6 +125,14 @@
             }
             .a5 .print-header-fixed .bloc-patient {
                 margin: 0 0 8px 0;
+            }
+            
+            /* Espacement après le bloc patient pour séparer des détails de la facture */
+            .bloc-patient {
+                margin-bottom: 20px !important;
+            }
+            .a5 .bloc-patient {
+                margin-bottom: 15px !important;
             }
             .print-header-fixed .bloc-patient-table {
                 width: 100%;
