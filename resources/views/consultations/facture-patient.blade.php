@@ -47,19 +47,23 @@
             .a4, .a5 { box-shadow: none; }
             .print-controls { display: none !important; }
             
-            /* Définir les marges pour la première page A4 (sans en-tête/pied fixe) */
+            /* Définir les marges pour la première page (sans en-tête/pied fixe) */
             @page:first {
                 margin: 0;
                 size: A4;
             }
             
-            /* Définir les marges pour les pages suivantes A4 (avec en-tête et pied fixe) */
+            /* Définir les marges pour les pages suivantes (avec en-tête et pied fixe) */
             /* La marge top doit correspondre à la hauteur réelle de l'en-tête */
+            /* Note: Pour A5, les marges seront ajustées proportionnellement via les styles CSS */
             @page {
                 size: A4;
-                margin-top: 70mm; /* Espace pour l'en-tête fixe (ajusté pour inclure tout l'en-tête) */
+                margin-top: 70mm; /* Espace pour l'en-tête fixe A4 (ajusté pour inclure tout l'en-tête) */
                 margin-bottom: 0; /* Pas de pied de page selon les dernières modifications */
             }
+            
+            /* Pour A5, ajuster les marges proportionnellement (A5 est environ 70% de A4) */
+            /* Les marges sont gérées via les styles CSS des éléments fixes */
             
             /* Règles spécifiques pour A5 */
             /* Note: Les règles @page ne peuvent pas être ciblées par classe CSS directement */
@@ -117,10 +121,41 @@
             .print-header-fixed .bloc-patient {
                 margin: 0 0 10px 0;
             }
+            .a5 .print-header-fixed .bloc-patient {
+                margin: 0 0 8px 0;
+            }
             .print-header-fixed .bloc-patient-table {
                 width: 100%;
                 border-collapse: collapse;
                 margin-bottom: 10px;
+            }
+            .print-header-fixed .bloc-patient-table td {
+                padding: 2px 8px;
+                font-size: 10px;
+            }
+            .a5 .print-header-fixed .bloc-patient-table td {
+                font-size: 9px;
+                padding: 1px 4px;
+            }
+            .print-header-fixed .bloc-patient-table .label {
+                font-weight: bold;
+                color: #222;
+                width: 80px;
+            }
+            .print-header-fixed .bloc-patient-table .value {
+                color: #222;
+            }
+            .print-header-fixed .bloc-patient-table .ref-cell {
+                text-align: right;
+                padding: 2px 4px;
+            }
+            .print-header-fixed .bloc-patient-table .ref-label {
+                font-weight: bold;
+                padding-right: 3px;
+                display: inline;
+            }
+            .print-header-fixed .bloc-patient-table .ref-value {
+                display: inline;
             }
             
             /* L'en-tête fixe est toujours affiché en impression */
@@ -286,10 +321,30 @@
             
             /* Ajustements spécifiques pour A5 - espacements réduits */
             .a5 .signature-block {
-                margin-top: 15px !important; /* Espace réduit pour A5 */
+                margin-top: 15px !important;
+                margin-bottom: 20px !important;
+                padding-right: 10px !important;
+            }
+            .a5 .signature-title {
+                margin-bottom: 15px !important;
+            }
+            
+            /* Styles pour les sections dans A5 */
+            .a5 .section-header {
+                font-size: 10px !important;
+                margin-top: 10px !important;
+                margin-bottom: 6px !important;
+                padding-bottom: 3px !important;
+            }
+            
+            /* Ajuster les marges des tableaux pour A5 */
+            .a5 .details-table {
+                margin-bottom: 15px !important;
             }
             
             /* Les règles @page sont définies plus haut pour gérer les marges */
+            /* Note: Les règles @page ne peuvent pas être conditionnelles selon la classe */
+            /* Les marges sont gérées via les styles CSS des éléments fixes */
         }
         .print-controls { display: flex; gap: 10px; justify-content: flex-end; margin: 18px 0; }
         .print-controls select, .print-controls button { padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; }
@@ -301,12 +356,46 @@
             text-align: right;
             padding-right: 20px;
         }
+        .a5 .signature-block {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            padding-right: 10px;
+        }
         .signature-title {
             font-weight: bold;
             margin-bottom: 25px;
         }
+        .a5 .signature-title {
+            margin-bottom: 15px;
+        }
         .signature-name {
             font-style: italic;
+        }
+        .section-header {
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 12px;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+        .a5 .section-header {
+            font-size: 10px;
+            margin-top: 10px;
+            margin-bottom: 6px;
+            padding-bottom: 3px;
+        }
+        /* Ajustements supplémentaires pour A5 - conformité avec A4 */
+        .a5 .bloc-patient {
+            margin: 0 0 8px 0;
+        }
+        .a5 .totaux-table {
+            width: 40%;
+        }
+        .a5 .montant-lettres {
+            font-size: 9px;
+            margin-top: 12px;
         }
     </style>
 </head>
@@ -452,10 +541,10 @@
     @if(count($detailsGroupes) > 1)
         {{-- Affichage par sections si plusieurs types --}}
         @foreach($detailsGroupes as $section => $details)
-            <div class="section-header" style="margin-top: 15px; margin-bottom: 10px; font-weight: bold; font-size: 12px; color: #333; border-bottom: 2px solid #007bff; padding-bottom: 5px;">
+            <div class="section-header">
                 {{ $section }}
             </div>
-            <table class="details-table" style="margin-bottom: 20px;">
+            <table class="details-table">
                 <thead>
                 <tr>
                     <th>Traitement</th>
