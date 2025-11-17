@@ -249,6 +249,17 @@
                 display: block !important;
             }
             
+            /* CRITIQUE : Pour A5, ajouter un padding-top au contenu principal sur les pages suivantes */
+            /* Cela évite que le contenu soit superposé par l'en-tête fixe */
+            /* On utilise un pseudo-élément pour ajouter de l'espace uniquement sur les pages suivantes */
+            body.has-multiple-pages .a5 > .recu-header:first-child {
+                margin-top: 0 !important;
+            }
+            
+            /* Alternative : Ajouter un espacement au premier élément après l'en-tête sur les pages suivantes */
+            /* Mais comme l'en-tête fixe est position: fixed, il ne prend pas d'espace dans le flux */
+            /* Donc on doit s'assurer que la marge @page est suffisante */
+            
             /* Sur la première page A5, pas de problème car margin: 0 */
             /* Sur les pages suivantes A5, l'en-tête fixe doit être dans la marge @page */
             /* Mais comme @page ne peut pas être conditionnel, on ajuste via le contenu */
@@ -373,17 +384,41 @@
             /* L'en-tête A5 doit être plus compact pour tenir dans une marge plus petite */
             /* On réduit les marges internes de l'en-tête fixe pour A5 */
             .a5 .print-header-fixed .recu-header {
-                margin-bottom: 2px !important;
+                margin-bottom: 0 !important;
+                padding: 0 !important;
+            }
+            .a5 .print-header-fixed .recu-header .header {
+                margin-bottom: 5px !important; /* Réduire la marge du header */
+            }
+            .a5 .print-header-fixed .recu-header img {
+                max-height: 25px !important; /* Réduire encore plus la hauteur de l'image du header */
+                margin: 0 !important;
+            }
+            .a5 .print-header-fixed .recu-header .text-center {
+                margin-bottom: 3px !important; /* Réduire la marge du texte */
+            }
+            .a5 .print-header-fixed .recu-header h1 {
+                font-size: 14px !important; /* Réduire la taille du titre du cabinet */
+                margin: 2px 0 !important;
+            }
+            .a5 .print-header-fixed .recu-header p {
+                font-size: 8px !important; /* Réduire la taille du texte */
+                margin: 1px 0 !important;
             }
             .a5 .print-header-fixed .facture-title {
-                margin-top: 5px !important;
-                margin-bottom: 12px !important;
+                margin-top: 2px !important;
+                margin-bottom: 8px !important;
+                font-size: 14px !important; /* Réduire encore la taille du titre */
             }
             .a5 .print-header-fixed .bloc-patient {
-                margin: 0 0 5px 0 !important;
+                margin: 0 0 3px 0 !important;
             }
             .a5 .print-header-fixed .bloc-patient-table {
-                margin-bottom: 5px !important;
+                margin-bottom: 3px !important;
+            }
+            .a5 .print-header-fixed .bloc-patient-table td {
+                padding: 1px 3px !important; /* Réduire encore le padding */
+                font-size: 8px !important; /* Réduire encore la taille de police */
             }
             
             /* Pour A5, ajuster la marge @page effectivement utilisée */
@@ -729,7 +764,7 @@ function updatePageFormat() {
                 @media print {
                     @page {
                         size: A5;
-                        margin-top: 50mm !important; /* Marge réduite pour A5 (au lieu de 70mm) */
+                        margin-top: 35mm !important; /* Marge encore plus réduite pour A5 (au lieu de 70mm) */
                         margin-bottom: 0 !important;
                     }
                     @page:first {
