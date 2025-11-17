@@ -396,14 +396,14 @@ class ConsultationForm extends Component
 
     protected function createFacture()
     {
-        $annee = Carbon::now()->year;
-        $derniereFacture = Facture::where('anneeFacture', $annee)
-                                ->orderBy('Nfacture', 'desc')
-                                ->first();
+        // Utiliser la méthode centralisée pour générer un numéro unique
+        $user = Auth::user();
+        $cabinetId = $user->fkidcabinet ?? 1;
         
-        $numero = $derniereFacture ? intval(explode('-', $derniereFacture->Nfacture)[0]) + 1 : 1;
-        $nfacture = $numero . '-' . $annee;
-        $nordre = (Facture::where('anneeFacture', $annee)->max('nordre') ?? 0) + 1;
+        $factureData = Facture::generateUniqueFactureNumber($cabinetId);
+        $nfacture = $factureData['Nfacture'];
+        $nordre = $factureData['nordre'];
+        $annee = $factureData['anneeFacture'];
 
         $montant = floatval($this->montant);
         

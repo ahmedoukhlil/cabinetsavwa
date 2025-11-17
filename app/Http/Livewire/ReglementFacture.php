@@ -713,14 +713,11 @@ class ReglementFacture extends Component
                 $medecinId = $user->fkidmedecin;
             }
 
-            $annee = Carbon::now()->year;
-            $derniereFacture = Facture::where('anneeFacture', $annee)
-                                ->orderBy('Nfacture', 'desc')
-                                ->first();
-            
-            $numero = $derniereFacture ? intval(explode('-', $derniereFacture->Nfacture)[0]) + 1 : 1;
-            $nfacture = $numero . '-' . $annee;
-            $nordre = (Facture::where('anneeFacture', $annee)->max('nordre') ?? 0) + 1;
+            // Utiliser la méthode centralisée pour générer un numéro unique
+            $factureData = Facture::generateUniqueFactureNumber($user->fkidcabinet);
+            $nfacture = $factureData['Nfacture'];
+            $nordre = $factureData['nordre'];
+            $annee = $factureData['anneeFacture'];
 
             // Récupérer l'assureur du patient si disponible
             $fkidEtsAssurance = null;
