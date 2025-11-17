@@ -5,23 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $facture->Type ?: 'FACTURE' }}</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fff; font-size: 12px; }
-        .a4 { width: 210mm; min-height: 297mm; margin: auto; background: #fff; padding: 0 18mm 0 10mm; position: relative; box-sizing: border-box; display: flex; flex-direction: column; min-height: 297mm; }
-        .a5 { width: 148mm; min-height: 210mm; margin: auto; background: #fff; padding: 0 10mm 0 5mm; position: relative; box-sizing: border-box; display: flex; flex-direction: column; min-height: 210mm; }
-        .facture-title { text-align: center; font-size: 22px; font-weight: bold; margin-top: 10px; margin-bottom: 28px; letter-spacing: 2px; }
-        .a5 .facture-title { font-size: 18px; margin-bottom: 20px; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fff; font-size: 10px; }
+        .a4 { width: 210mm; min-height: 297mm; margin: auto; background: #fff; padding: 0 18mm 0 10mm; position: relative; box-sizing: border-box; }
+        .a5 { width: 148mm; min-height: 210mm; margin: auto; background: #fff; padding: 0 10mm 0 5mm; position: relative; box-sizing: border-box; }
+        .facture-title { text-align: center; font-size: 18px; font-weight: bold; margin-top: 10px; margin-bottom: 28px; letter-spacing: 2px; }
+        .a5 .facture-title { font-size: 15px; margin-bottom: 20px; }
         .bloc-patient { margin: 0 0 10px 0; }
         .bloc-patient-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-        .bloc-patient-table td { padding: 2px 8px; font-size: 12px; }
-        .a5 .bloc-patient-table td { font-size: 10px; padding: 1px 4px; }
+        .bloc-patient-table td { padding: 2px 8px; font-size: 10px; }
+        .a5 .bloc-patient-table td { font-size: 9px; padding: 1px 4px; }
         .bloc-patient-table .label { font-weight: bold; color: #222; width: 80px; }
         .bloc-patient-table .value { color: #222; }
         .bloc-patient-table .ref-cell { text-align: right; padding: 2px 4px; }
         .bloc-patient-table .ref-label { font-weight: bold; padding-right: 3px; display: inline; }
         .bloc-patient-table .ref-value { display: inline; }
         .details-table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
-        .details-table th, .details-table td { border: 1px solid #222; font-size: 12px; padding: 6px 8px; }
-        .a5 .details-table th, .a5 .details-table td { font-size: 10px; padding: 4px 6px; }
+        .details-table th, .details-table td { border: 1px solid #222; font-size: 10px; padding: 6px 8px; }
+        .a5 .details-table th, .a5 .details-table td { font-size: 9px; padding: 4px 6px; }
         .details-table th { background: #f4f6fa; text-align: center; }
         .details-table td { text-align: center; }
         .details-table th:first-child, .details-table td:first-child { text-align: left; }
@@ -29,10 +29,10 @@
         .details-table tfoot tr { background-color: #f4f6fa; font-weight: bold; }
         .details-table tfoot td { border: 1px solid #222; }
         .totaux-table { width: 40%; border-collapse: collapse; margin-top: 0; margin-bottom: 0; margin-left: auto; }
-        .totaux-table td { border: 1px solid #222; font-size: 12px; padding: 6px 8px; text-align: right; }
-        .a5 .totaux-table td { font-size: 10px; padding: 4px 6px; }
-        .montant-lettres { margin-top: 18px; font-size: 12px; clear: both; text-align: left; }
-        .a5 .montant-lettres { font-size: 10px; margin-top: 12px; }
+        .totaux-table td { border: 1px solid #222; font-size: 10px; padding: 6px 8px; text-align: right; }
+        .a5 .totaux-table td { font-size: 9px; padding: 4px 6px; }
+        .montant-lettres { margin-top: 18px; font-size: 10px; clear: both; text-align: left; }
+        .a5 .montant-lettres { font-size: 9px; margin-top: 12px; }
         .recu-header, .recu-footer { width: 100%; text-align: center; }
         .recu-header img, .recu-footer img { max-width: 100%; height: auto; }
         .recu-footer { position: absolute; bottom: 0; left: 0; width: 100%; }
@@ -50,40 +50,86 @@
             /* Définir les marges pour la première page (sans en-tête/pied fixe) */
             @page:first {
                 margin: 0;
+                size: A4;
             }
             
             /* Définir les marges pour les pages suivantes (avec en-tête et pied fixe) */
+            /* La marge top doit correspondre à la hauteur réelle de l'en-tête */
             @page {
-                margin-top: 60mm; /* Espace pour l'en-tête fixe */
+                size: A4;
+                margin-top: 70mm; /* Espace pour l'en-tête fixe (ajusté pour inclure tout l'en-tête) */
                 margin-bottom: 25mm; /* Espace pour le pied de page fixe */
             }
             
-            /* En-tête fixe - masqué sur la première page, visible sur les pages suivantes */
-            .print-header-fixed {
-                display: none; /* Masqué par défaut (première page) */
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                width: 100%;
-                background: #fff;
-                z-index: 1000;
-                padding: 5mm 18mm 5mm 10mm;
-                border-bottom: 1px solid #ddd;
-            }
-            .a5 .print-header-fixed {
-                padding: 3mm 10mm 3mm 5mm;
+            /* Pour le format A5 */
+            @page {
+                size: A5;
             }
             
-            /* Afficher l'en-tête fixe seulement sur les pages suivantes */
-            /* La classe sera ajoutée par JavaScript si le contenu dépasse une page */
-            body.has-multiple-pages .print-header-fixed {
-                display: block;
+            /* En-tête fixe - fixé en haut des pages suivantes */
+            .print-header-fixed {
+                display: block !important; /* Toujours afficher en impression */
+                position: fixed !important; /* Fixé par rapport à chaque page lors de l'impression */
+                top: 0 !important; /* En haut absolu de chaque page */
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                background: #fff !important;
+                z-index: 1000 !important;
+                /* Padding identique à .a4 : padding: 0 18mm 0 10mm */
+                padding: 0 18mm 0 10mm !important;
+                /* S'assurer que les styles internes sont identiques à la première page */
+                box-sizing: border-box !important;
+                /* S'assurer que l'en-tête reste en haut même lors du scroll */
+                margin: 0 !important;
+                /* S'assurer que l'en-tête ne se déplace pas */
+                transform: none !important;
             }
+            .a5 .print-header-fixed {
+                /* Padding identique à .a5 : padding: 0 10mm 0 5mm */
+                padding: 0 10mm 0 5mm !important;
+            }
+            
+            /* Sur la première page, masquer l'en-tête fixe en le positionnant hors de vue */
+            /* La première page a margin: 0, donc l'en-tête fixe sera coupé */
+            /* Les pages suivantes ont margin-top: 70mm, donc l'en-tête sera visible dans cette marge */
+            
+            /* S'assurer que les éléments internes de l'en-tête fixe ont exactement les mêmes styles */
+            .print-header-fixed .recu-header {
+                width: 100%;
+                text-align: center;
+                margin: 0;
+                padding: 0;
+            }
+            .print-header-fixed .facture-title {
+                text-align: center;
+                font-size: 18px;
+                font-weight: bold;
+                margin-top: 10px;
+                margin-bottom: 28px;
+                letter-spacing: 2px;
+            }
+            .a5 .print-header-fixed .facture-title {
+                font-size: 15px;
+                margin-bottom: 20px;
+            }
+            .print-header-fixed .bloc-patient {
+                margin: 0 0 10px 0;
+            }
+            .print-header-fixed .bloc-patient-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 10px;
+            }
+            
+            /* L'en-tête fixe est toujours affiché en impression */
+            /* Il sera masqué sur la première page grâce à @page:first { margin: 0 } */
+            /* Il sera visible sur les pages suivantes grâce à @page { margin-top: 70mm } */
+            /* L'en-tête fixe est positionné à top: 0, donc il apparaîtra dans la marge de 70mm */
             
             /* Pied de page fixe - masqué sur la première page, visible sur les pages suivantes */
             .print-footer-fixed {
-                display: none; /* Masqué par défaut (première page) */
+                display: block; /* Afficher en impression, masqué sur la première page par les marges */
                 position: fixed;
                 bottom: 0;
                 left: 0;
@@ -91,15 +137,30 @@
                 width: 100%;
                 background: #fff;
                 z-index: 1000;
-                padding: 5mm 18mm;
-                text-align: center;
+                /* Padding identique à .a4 : padding: 0 18mm 0 10mm */
+                padding: 0 18mm 0 10mm;
+                box-sizing: border-box;
             }
             .a5 .print-footer-fixed {
-                padding: 3mm 10mm;
+                /* Padding identique à .a5 : padding: 0 10mm 0 5mm */
+                padding: 0 10mm 0 5mm;
+            }
+            
+            /* S'assurer que le pied de page fixe a exactement les mêmes styles */
+            .print-footer-fixed .recu-footer {
+                width: 100%;
+                text-align: center;
+                margin: 0;
+                padding: 0;
             }
             
             /* Afficher le pied de page fixe seulement sur les pages suivantes */
             body.has-multiple-pages .print-footer-fixed {
+                display: block;
+            }
+            
+            /* Alternative : toujours afficher le pied de page fixe en impression */
+            .print-footer-fixed {
                 display: block;
             }
             
@@ -111,14 +172,40 @@
             }
             
             
-            /* Ajuster les marges du contenu */
-            .a4 {
-                padding-top: 0;
-                padding-bottom: 0;
+            /* CRITIQUE : Retirer TOUTES les limitations de hauteur pour permettre le débordement */
+            /* Le conteneur doit pouvoir s'étendre au-delà d'une page */
+            .a4, .a5 {
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
+                /* Retirer TOUTES les limitations de hauteur */
+                min-height: 0 !important;
+                height: auto !important;
+                max-height: none !important;
+                /* Permettre le débordement naturel - CRITIQUE pour les sauts de page */
+                overflow: visible !important;
+                /* S'assurer que le contenu peut vraiment déborder et créer de nouvelles pages */
+                page-break-inside: auto !important;
+                page-break-after: auto !important;
+                /* S'assurer que le conteneur n'a pas de position qui limite le débordement */
+                position: relative !important;
+                /* S'assurer qu'il n'y a pas de display flex qui limite le débordement */
+                display: block !important;
             }
-            .a5 {
-                padding-top: 0;
-                padding-bottom: 0;
+            
+            /* Le body et html doivent aussi permettre le débordement */
+            body, html {
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
+                overflow: visible !important;
+            }
+            
+            /* Le conteneur documentContainer doit pouvoir déborder */
+            #documentContainer {
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
+                overflow: visible !important;
             }
             
             /* Répéter les en-têtes de tableaux sur chaque page */
@@ -130,8 +217,17 @@
             }
             
             /* Éviter les coupures dans les éléments importants */
+            /* Mais permettre qu'ils soient déplacés à la page suivante si nécessaire */
             .totaux-table, .montant-lettres, .signature-block {
                 page-break-inside: avoid;
+                page-break-before: auto;
+            }
+            
+            /* Si le bloc de signature n'a pas d'espace, le déplacer à la page suivante */
+            .signature-block {
+                page-break-before: auto;
+                /* S'assurer qu'il y a de l'espace avant la signature */
+                margin-top: 20px;
             }
             
             /* Permettre les sauts de page automatiques dans le contenu */
@@ -139,18 +235,58 @@
                 page-break-inside: auto;
             }
             
-            /* S'assurer que le contenu peut se répartir sur plusieurs pages */
-            .a4, .a5 {
-                page-break-after: auto;
+            /* S'assurer que le contenu peut déborder et créer de nouvelles pages */
+            body, html {
+                overflow: visible !important;
+                height: auto !important;
+                max-height: none !important;
             }
             
-            /* Éviter les sauts de page dans les lignes de tableau individuelles */
+            /* Permettre les sauts de page dans les lignes de tableau si nécessaire */
             .details-table tr {
+                /* Permettre les sauts de page dans les lignes si le tableau est trop long */
+                page-break-inside: auto !important;
+            }
+            
+            /* Permettre les sauts de page dans les sections */
+            .section-header {
+                page-break-after: avoid;
+                page-break-before: auto;
+            }
+            
+            /* Permettre les sauts de page dans les tableaux de détails */
+            .details-table {
+                page-break-inside: auto !important;
+            }
+            
+            /* S'assurer que tous les éléments peuvent être coupés entre les pages */
+            /* Sauf les éléments importants qui ne doivent pas être coupés */
+            .totaux-table, .montant-lettres, .signature-block {
                 page-break-inside: avoid;
             }
+            
+            /* Tous les autres éléments peuvent être coupés */
+            .details-table, .section-header, .bloc-patient {
+                page-break-inside: auto;
+            }
+            
+            /* CRITIQUE : Le conteneur principal ne doit avoir AUCUNE limitation */
+            /* Le navigateur créera automatiquement de nouvelles pages si le contenu dépasse */
+            .a4, .a5, #documentContainer {
+                /* S'assurer qu'il n'y a aucune limitation de hauteur */
+                display: block !important;
+                /* Le contenu doit pouvoir s'étendre indéfiniment */
+                /* Le navigateur gérera automatiquement les sauts de page */
+            }
+            
+            /* S'assurer que le contenu peut vraiment déborder */
+            /* Le navigateur créera automatiquement une nouvelle page quand le contenu dépasse */
+            /* Il n'y a pas besoin de forcer les sauts de page manuellement */
+            
+            /* Les règles @page sont définies plus haut pour gérer les marges */
         }
         .print-controls { display: flex; gap: 10px; justify-content: flex-end; margin: 18px 0; }
-        .print-controls select, .print-controls button { padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        .print-controls select, .print-controls button { padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; }
         .print-controls button { background: #2c5282; color: #fff; border: none; cursor: pointer; }
         .bloc-patient-table .praticien-value { padding-left: 2px !important; }
         .signature-block {
@@ -172,13 +308,13 @@
 <!-- En-tête fixe pour pagination (identique à la première page) -->
 <div class="print-header-fixed">
     <div class="recu-header">@include('partials.recu-header')</div>
-    <div class="facture-title" style="font-size: 18px; margin: 10px 0; text-align: center;">{{ $facture->Type ?: 'FACTURE' }}</div>
-    <div class="bloc-patient" style="margin: 5px 0;">
-        <table class="bloc-patient-table" style="font-size: 10px; width: 100%;">
+    <div class="facture-title">{{ $facture->Type ?: 'FACTURE' }}</div>
+    <div class="bloc-patient">
+        <table class="bloc-patient-table">
             <tr>
                 <td class="label">N° Fiche :</td>
                 <td class="value">{{ $facture->patient->IdentifiantPatient ?? 'N/A' }}</td>
-                <td class="ref-cell" colspan="2" style="text-align: right;">
+                <td class="ref-cell" colspan="2">
                     <span class="ref-label">Réf :</span>
                     <span class="ref-value">{{ $facture->Nfacture ?? 'N/A' }}</span>
                 </td>
@@ -186,7 +322,7 @@
             <tr>
                 <td class="label">Nom Patient :</td>
                 <td class="value">{{ $facture->patient->NomContact ?? 'N/A' }}</td>
-                <td class="ref-cell" colspan="2" style="text-align: right;">
+                <td class="ref-cell" colspan="2">
                     <span class="ref-label">Date :</span>
                     <span class="ref-value">{{ $facture->DtFacture ? $facture->DtFacture->format('d/m/Y H:i') : 'N/A' }}</span>
                 </td>
@@ -310,7 +446,7 @@
     @if(count($detailsGroupes) > 1)
         {{-- Affichage par sections si plusieurs types --}}
         @foreach($detailsGroupes as $section => $details)
-            <div class="section-header" style="margin-top: 15px; margin-bottom: 10px; font-weight: bold; font-size: 14px; color: #333; border-bottom: 2px solid #007bff; padding-bottom: 5px;">
+            <div class="section-header" style="margin-top: 15px; margin-bottom: 10px; font-weight: bold; font-size: 12px; color: #333; border-bottom: 2px solid #007bff; padding-bottom: 5px;">
                 {{ $section }}
             </div>
             <table class="details-table" style="margin-bottom: 20px;">
@@ -453,44 +589,79 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     document.head.appendChild(style);
     
-    // Détecter si le contenu dépasse une page et afficher les éléments fixes
+    // Fonction pour détecter si le contenu dépasse une page
+    // Le navigateur gère automatiquement les sauts de page, mais on active les en-têtes/pieds fixes
     function checkMultiplePages() {
         const container = document.querySelector('.a4, .a5');
-        if (container) {
-            // Calculer la hauteur du contenu
+        if (!container) return;
+        
+        // Attendre que le DOM soit complètement rendu
+        setTimeout(function() {
             const contentHeight = container.scrollHeight;
-            // Hauteur d'une page A4 en pixels (297mm à 96 DPI ≈ 1123px)
-            // Hauteur d'une page A5 en pixels (210mm à 96 DPI ≈ 794px)
             const isA5 = container.classList.contains('a5');
-            const pageHeight = isA5 ? 794 : 1123;
             
-            // Si le contenu dépasse une page, ajouter la classe
-            if (contentHeight > pageHeight) {
+            // Hauteur d'une page en pixels (approximation)
+            // A4: 297mm = ~1123px à 96 DPI
+            // A5: 210mm = ~794px à 96 DPI
+            const pageHeightPx = isA5 ? 794 : 1123;
+            
+            // Si le contenu dépasse une page, activer le mode multi-pages
+            // Utiliser une marge de sécurité (80% de la hauteur de page)
+            if (contentHeight > pageHeightPx * 0.8) {
                 document.body.classList.add('has-multiple-pages');
             } else {
                 document.body.classList.remove('has-multiple-pages');
             }
-        }
+        }, 100);
     }
     
+    // Toujours activer le mode multi-pages en impression pour s'assurer que les en-têtes/pieds s'affichent
+    window.addEventListener('beforeprint', function() {
+        // Activer immédiatement le mode multi-pages
+        document.body.classList.add('has-multiple-pages');
+        
+        // Vérifier aussi avec la fonction
+        setTimeout(function() {
+            checkMultiplePages();
+            // Forcer l'activation si le contenu semble long
+            const container = document.querySelector('.a4, .a5');
+            if (container && container.scrollHeight > 800) {
+                document.body.classList.add('has-multiple-pages');
+            }
+        }, 50);
+    });
+    
     // Vérifier au chargement
+    window.addEventListener('load', function() {
+        setTimeout(checkMultiplePages, 200);
+        setTimeout(checkMultiplePages, 1000);
+    });
+    
+    // Vérifier immédiatement
     checkMultiplePages();
-    
-    // Vérifier avant l'impression
-    window.addEventListener('beforeprint', checkMultiplePages);
-    
-    // Vérifier après le chargement complet
-    window.addEventListener('load', checkMultiplePages);
     
     // Vérifier lors des changements de format
     const pageFormatSelect = document.getElementById('pageFormat');
     if (pageFormatSelect) {
         pageFormatSelect.addEventListener('change', function() {
-            setTimeout(checkMultiplePages, 100);
+            setTimeout(checkMultiplePages, 300);
         });
+    }
+    
+    // Observer les changements de taille
+    if (window.ResizeObserver) {
+        const resizeObserver = new ResizeObserver(function() {
+            clearTimeout(window.checkMultiplePagesTimeout);
+            window.checkMultiplePagesTimeout = setTimeout(checkMultiplePages, 300);
+        });
+        
+        const container = document.querySelector('.a4, .a5');
+        if (container) {
+            resizeObserver.observe(container);
+        }
     }
 });
 </script>
 </body>
-</html>
+</html> 
 
