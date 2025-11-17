@@ -58,7 +58,7 @@
                 margin-bottom: 25mm; /* Espace pour le pied de page fixe */
             }
             
-            /* En-tête fixe - masqué par défaut, affiché seulement sur les pages suivantes */
+            /* En-tête fixe - masqué sur la première page, visible sur les pages suivantes */
             .print-header-fixed {
                 display: none; /* Masqué par défaut (première page) */
                 position: fixed;
@@ -76,11 +76,12 @@
             }
             
             /* Afficher l'en-tête fixe seulement sur les pages suivantes */
-            .show-on-subsequent-pages .print-header-fixed {
+            /* La classe sera ajoutée par JavaScript si le contenu dépasse une page */
+            body.has-multiple-pages .print-header-fixed {
                 display: block;
             }
             
-            /* Pied de page fixe - masqué par défaut, affiché seulement sur les pages suivantes */
+            /* Pied de page fixe - masqué sur la première page, visible sur les pages suivantes */
             .print-footer-fixed {
                 display: none; /* Masqué par défaut (première page) */
                 position: fixed;
@@ -99,7 +100,7 @@
             }
             
             /* Afficher le pied de page fixe seulement sur les pages suivantes */
-            .show-on-subsequent-pages .print-footer-fixed {
+            body.has-multiple-pages .print-footer-fixed {
                 display: block;
             }
             
@@ -140,6 +141,21 @@
             
             /* Éviter les coupures dans les éléments importants */
             .totaux-table, .montant-lettres, .signature-block {
+                page-break-inside: avoid;
+            }
+            
+            /* Permettre les sauts de page automatiques dans le contenu */
+            .facture-content {
+                page-break-inside: auto;
+            }
+            
+            /* S'assurer que le contenu peut se répartir sur plusieurs pages */
+            .a4, .a5 {
+                page-break-after: auto;
+            }
+            
+            /* Éviter les sauts de page dans les lignes de tableau individuelles */
+            .details-table tr {
                 page-break-inside: avoid;
             }
         }
@@ -425,22 +441,42 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     document.head.appendChild(style);
     
-    // Afficher les en-têtes et pieds de page fixes seulement sur les pages suivantes
-    window.addEventListener('beforeprint', function() {
-        // Vérifier si le contenu dépasse une page
+    // Détecter si le contenu dépasse une page et afficher les éléments fixes
+    function checkMultiplePages() {
         const container = document.querySelector('.a4, .a5');
         if (container) {
+            // Calculer la hauteur du contenu
             const contentHeight = container.scrollHeight;
-            const pageHeight = 1123; // Hauteur A4 en pixels (297mm)
+            // Hauteur d'une page A4 en pixels (297mm à 96 DPI ≈ 1123px)
+            // Hauteur d'une page A5 en pixels (210mm à 96 DPI ≈ 794px)
             const isA5 = container.classList.contains('a5');
-            const actualPageHeight = isA5 ? 794 : 1123; // Hauteur A5 en pixels (210mm)
+            const pageHeight = isA5 ? 794 : 1123;
             
-            // Si le contenu dépasse une page, afficher les éléments fixes
-            if (contentHeight > actualPageHeight) {
-                document.body.classList.add('show-on-subsequent-pages');
+            // Si le contenu dépasse une page, ajouter la classe
+            if (contentHeight > pageHeight) {
+                document.body.classList.add('has-multiple-pages');
+            } else {
+                document.body.classList.remove('has-multiple-pages');
             }
         }
-    });
+    }
+    
+    // Vérifier au chargement
+    checkMultiplePages();
+    
+    // Vérifier avant l'impression
+    window.addEventListener('beforeprint', checkMultiplePages);
+    
+    // Vérifier après le chargement complet
+    window.addEventListener('load', checkMultiplePages);
+    
+    // Vérifier lors des changements de format
+    const pageFormatSelect = document.getElementById('pageFormat');
+    if (pageFormatSelect) {
+        pageFormatSelect.addEventListener('change', function() {
+            setTimeout(checkMultiplePages, 100);
+        });
+    }
 });
 </script>
 </body>
