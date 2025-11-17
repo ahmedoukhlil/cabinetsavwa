@@ -8,6 +8,7 @@ namespace App\Models;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Class Facture
@@ -127,6 +128,86 @@ class Facture extends Model
 	public function reglements()
 	{
 		return $this->hasMany(Reglement::class, 'fkidFactBord', 'Idfacture');
+	}
+
+	/**
+	 * Générer un numéro de facture unique pour un cabinet donné
+	 * 
+	 * @param int $cabinetId L'ID du cabinet
+	 * @param int|null $annee L'année (par défaut année courante)
+	 * @return array ['Nfacture' => string, 'nordre' => int, 'anneeFacture' => int]
+	 */
+	public static function generateUniqueFactureNumber($cabinetId, $annee = null)
+	{
+		$annee = $annee ?? Carbon::now()->year;
+		$maxRetries = 10;
+		$retry = 0;
+		
+		while ($retry < $maxRetries) {
+			try {
+				// Utiliser une transaction avec verrouillage pour éviter les race conditions
+				return DB::transaction(function () use ($cabinetId, $annee) {
+					// Trouver la dernière facture pour ce cabinet et cette année avec verrouillage
+					$derniereFacture = self::where('anneeFacture', $annee)
+						->where('fkidCabinet', $cabinetId)
+						->lockForUpdate() // Verrouiller les lignes pour éviter les conflits
+						->orderBy('nordre', 'desc')
+						->first();
+					
+					// Calculer le prochain numéro
+					if ($derniereFacture && $derniereFacture->Nfacture) {
+						// Extraire le numéro de la dernière facture
+						$parts = explode('-', $derniereFacture->Nfacture);
+						$numero = intval($parts[0]) + 1;
+						$nordre = $derniereFacture->nordre + 1;
+					} else {
+						$numero = 1;
+						$nordre = 1;
+					}
+					
+					$nfacture = $numero . '-' . $annee;
+					
+					// Vérifier l'unicité du numéro de facture
+					$exists = self::where('Nfacture', $nfacture)
+						->where('fkidCabinet', $cabinetId)
+						->exists();
+					
+					if ($exists) {
+						// Si le numéro existe déjà, incrémenter et réessayer
+						$numero++;
+						$nordre++;
+						$nfacture = $numero . '-' . $annee;
+						
+						// Vérifier à nouveau
+						$exists = self::where('Nfacture', $nfacture)
+							->where('fkidCabinet', $cabinetId)
+							->exists();
+						
+						if ($exists) {
+							throw new \Exception('Numéro de facture déjà existant: ' . $nfacture);
+						}
+					}
+					
+					return [
+						'Nfacture' => $nfacture,
+						'nordre' => $nordre,
+						'anneeFacture' => $annee
+					];
+				});
+				
+			} catch (\Exception $e) {
+				$retry++;
+				
+				if ($retry >= $maxRetries) {
+					throw new \Exception('Impossible de générer un numéro de facture unique après ' . $maxRetries . ' tentatives: ' . $e->getMessage());
+				}
+				
+				// Attendre un peu avant de réessayer (éviter les collisions)
+				usleep(100000); // 100ms
+			}
+		}
+		
+		throw new \Exception('Impossible de générer un numéro de facture unique après ' . $maxRetries . ' tentatives');
 	}
 
 	/**
