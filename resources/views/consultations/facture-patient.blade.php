@@ -47,24 +47,25 @@
             .a4, .a5 { box-shadow: none; }
             .print-controls { display: none !important; }
             
-            /* Définir les marges pour la première page (sans en-tête/pied fixe) */
+            /* Définir les marges pour la première page A4 (sans en-tête/pied fixe) */
             @page:first {
                 margin: 0;
                 size: A4;
             }
             
-            /* Définir les marges pour les pages suivantes (avec en-tête et pied fixe) */
+            /* Définir les marges pour les pages suivantes A4 (avec en-tête et pied fixe) */
             /* La marge top doit correspondre à la hauteur réelle de l'en-tête */
             @page {
                 size: A4;
                 margin-top: 70mm; /* Espace pour l'en-tête fixe (ajusté pour inclure tout l'en-tête) */
-                margin-bottom: 25mm; /* Espace pour le pied de page fixe */
+                margin-bottom: 0; /* Pas de pied de page selon les dernières modifications */
             }
             
-            /* Pour le format A5 */
-            @page {
-                size: A5;
-            }
+            /* Règles spécifiques pour A5 */
+            /* Note: Les règles @page ne peuvent pas être ciblées par classe CSS directement */
+            /* Les mêmes règles @page s'appliquent à A4 et A5, mais les marges sont gérées via l'en-tête fixe */
+            /* Pour A5, l'en-tête fixe est plus compact (padding réduit), donc moins de marge nécessaire */
+            /* A5: 148mm x 210mm vs A4: 210mm x 297mm (environ 70% de la taille) */
             
             /* En-tête fixe - fixé en haut des pages suivantes */
             .print-header-fixed {
@@ -282,6 +283,11 @@
             /* S'assurer que le contenu peut vraiment déborder */
             /* Le navigateur créera automatiquement une nouvelle page quand le contenu dépasse */
             /* Il n'y a pas besoin de forcer les sauts de page manuellement */
+            
+            /* Ajustements spécifiques pour A5 - espacements réduits */
+            .a5 .signature-block {
+                margin-top: 15px !important; /* Espace réduit pour A5 */
+            }
             
             /* Les règles @page sont définies plus haut pour gérer les marges */
         }

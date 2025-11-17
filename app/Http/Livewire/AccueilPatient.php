@@ -81,6 +81,7 @@ class AccueilPatient extends Component
 
     protected $listeners = [
         'patientSelected' => 'setPatient',
+        'patientCleared' => 'clearSelectedPatient',
         'patientCreated' => 'handlePatientCreated',
         'closeCreateModal' => 'closeCreateModal',
         'closeNouveauPatientModal' => 'closeNouveauPatientModal',
