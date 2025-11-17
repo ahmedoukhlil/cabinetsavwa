@@ -195,12 +195,8 @@ class ReglementFacture extends Component
                 'ISTP' => $facture->ISTP ?? 0,
                 'est_reglee' => ((($facture->ISTP > 0 ? ($facture->TotalfactPatient ?? 0) : ($facture->TotFacture ?? 0)) - ($facture->TotReglPatient ?? 0)) <= 0) && ($facture->ISTP > 0 ? (($facture->TotalPEC ?? 0) - ($facture->ReglementPEC ?? 0)) <= 0 : true),
             ];
-            // Si la facture est déjà réglée, on permet d'ajouter un montant positif
-            if ($this->factureSelectionnee['reste_a_payer'] >= $this->factureSelectionnee['part_patient']) {
-                $this->montantReglement = 0;
-            } else {
-                $this->montantReglement = $this->factureSelectionnee['part_patient'] - $this->factureSelectionnee['reste_a_payer'];
-            }
+            // Initialiser le montant du paiement avec le reste à payer
+            $this->montantReglement = max(0, $this->factureSelectionnee['reste_a_payer']);
 
             // Détection assuré ou non
             if ($facture->ISTP == 1) {
@@ -726,6 +722,17 @@ class ReglementFacture extends Component
             $nfacture = $numero . '-' . $annee;
             $nordre = (Facture::where('anneeFacture', $annee)->max('nordre') ?? 0) + 1;
 
+            // Récupérer l'assureur du patient si disponible
+            $fkidEtsAssurance = null;
+            if (isset($this->selectedPatient['ID'])) {
+                $patient = \App\Models\Patient::find($this->selectedPatient['ID']);
+                if ($patient && $patient->Assureur) {
+                    $fkidEtsAssurance = $patient->Assureur;
+                } elseif (isset($this->selectedPatient['Assureur']) && $this->selectedPatient['Assureur'] > 0) {
+                    $fkidEtsAssurance = $this->selectedPatient['Assureur'];
+                }
+            }
+
             $facture = Facture::create([
                 'Nfacture' => $nfacture,
                 'anneeFacture' => $annee,
@@ -733,6 +740,7 @@ class ReglementFacture extends Component
                 'DtFacture' => Carbon::now(),
                 'IDPatient' => $this->selectedPatient['ID'],
                 'ISTP' => 0,
+                'fkidEtsAssurance' => $fkidEtsAssurance,
                 'TXPEC' => 0,
                 'TotFacture' => 0,
                 'TotalPEC' => 0,

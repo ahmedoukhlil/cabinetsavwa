@@ -36,7 +36,113 @@
         .recu-header, .recu-footer { width: 100%; text-align: center; }
         .recu-header img, .recu-footer img { max-width: 100%; height: auto; }
         .recu-footer { position: absolute; bottom: 0; left: 0; width: 100%; }
-        @media print { .a4, .a5 { box-shadow: none; } .recu-footer { position: fixed; bottom: 0; left: 0; width: 100%; } .print-controls { display: none !important; } }
+        
+        /* En-tête et pied de page pour pagination - masqués à l'écran */
+        .print-header-fixed, .print-footer-fixed {
+            display: none;
+        }
+        
+        /* Styles pour l'impression avec pagination */
+        @media print {
+            .a4, .a5 { box-shadow: none; }
+            .print-controls { display: none !important; }
+            
+            /* Définir les marges pour la première page (sans en-tête/pied fixe) */
+            @page:first {
+                margin: 0;
+            }
+            
+            /* Définir les marges pour les pages suivantes (avec en-tête/pied fixe) */
+            @page {
+                margin-top: 60mm; /* Espace pour l'en-tête fixe */
+                margin-bottom: 25mm; /* Espace pour le pied de page fixe */
+            }
+            
+            /* En-tête fixe - masqué par défaut, affiché seulement sur les pages suivantes */
+            .print-header-fixed {
+                display: none; /* Masqué par défaut (première page) */
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                width: 100%;
+                background: #fff;
+                z-index: 1000;
+                padding: 5mm 18mm 5mm 10mm;
+                border-bottom: 1px solid #ddd;
+            }
+            .a5 .print-header-fixed {
+                padding: 3mm 10mm 3mm 5mm;
+            }
+            
+            /* Afficher l'en-tête fixe seulement sur les pages suivantes */
+            .show-on-subsequent-pages .print-header-fixed {
+                display: block;
+            }
+            
+            /* Pied de page fixe - masqué par défaut, affiché seulement sur les pages suivantes */
+            .print-footer-fixed {
+                display: none; /* Masqué par défaut (première page) */
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                width: 100%;
+                background: #fff;
+                z-index: 1000;
+                padding: 5mm 18mm;
+                border-top: 1px solid #ddd;
+                text-align: center;
+            }
+            .a5 .print-footer-fixed {
+                padding: 3mm 10mm;
+            }
+            
+            /* Afficher le pied de page fixe seulement sur les pages suivantes */
+            .show-on-subsequent-pages .print-footer-fixed {
+                display: block;
+            }
+            
+            /* Ajouter le numéro de page au pied de page */
+            .print-footer-fixed::after {
+                content: "Page " counter(page);
+                display: block;
+                margin-top: 5px;
+                font-size: 10px;
+                color: #666;
+            }
+            
+            /* Sur la première page, garder les en-têtes et pieds de page originaux visibles */
+            /* Sur les pages suivantes, masquer les en-têtes et pieds de page originaux */
+            /* On utilise une approche avec page-break pour détecter les pages suivantes */
+            .recu-header, .recu-footer {
+                display: block;
+            }
+            
+            
+            /* Ajuster les marges du contenu */
+            .a4 {
+                padding-top: 0;
+                padding-bottom: 0;
+            }
+            .a5 {
+                padding-top: 0;
+                padding-bottom: 0;
+            }
+            
+            /* Répéter les en-têtes de tableaux sur chaque page */
+            .details-table thead {
+                display: table-header-group;
+            }
+            .details-table tfoot {
+                display: table-footer-group;
+            }
+            
+            /* Éviter les coupures dans les éléments importants */
+            .totaux-table, .montant-lettres, .signature-block {
+                page-break-inside: avoid;
+            }
+        }
         .print-controls { display: flex; gap: 10px; justify-content: flex-end; margin: 18px 0; }
         .print-controls select, .print-controls button { padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         .print-controls button { background: #2c5282; color: #fff; border: none; cursor: pointer; }
@@ -57,6 +163,37 @@
     </style>
 </head>
 <body>
+<!-- En-tête fixe pour pagination (uniquement avec partials) -->
+<div class="print-header-fixed">
+    @include('partials.recu-header')
+    <div class="facture-title" style="font-size: 18px; margin: 10px 0; text-align: center;">{{ $facture->Type ?: 'FACTURE' }}</div>
+    <div class="bloc-patient" style="margin: 5px 0;">
+        <table class="bloc-patient-table" style="font-size: 10px; width: 100%;">
+            <tr>
+                <td class="label">N° Fiche :</td>
+                <td class="value">{{ $facture->patient->IdentifiantPatient ?? 'N/A' }}</td>
+                <td class="ref-cell" colspan="2" style="text-align: right;">
+                    <span class="ref-label">Réf :</span>
+                    <span class="ref-value">{{ $facture->Nfacture ?? 'N/A' }}</span>
+                </td>
+            </tr>
+            <tr>
+                <td class="label">Nom Patient :</td>
+                <td class="value">{{ $facture->patient->NomContact ?? 'N/A' }}</td>
+                <td class="ref-cell" colspan="2" style="text-align: right;">
+                    <span class="ref-label">Date :</span>
+                    <span class="ref-value">{{ $facture->DtFacture ? $facture->DtFacture->format('d/m/Y H:i') : 'N/A' }}</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<!-- Pied de page fixe pour pagination (uniquement avec partial) -->
+<div class="print-footer-fixed">
+    @include('partials.recu-footer')
+</div>
+
 <div class="a4" id="documentContainer">
     <div class="print-controls">
         <select id="documentType" onchange="updateDocumentType()">
@@ -272,6 +409,40 @@ function updatePageFormat() {
     elements.container.classList.toggle('a4', !isA5);
     elements.container.classList.toggle('a5', isA5);
 }
+
+// Gestion de la pagination avec compteur CSS
+document.addEventListener('DOMContentLoaded', function() {
+    const style = document.createElement('style');
+    style.textContent = `
+        @media print {
+            @page {
+                counter-increment: page;
+            }
+            @page:first {
+                counter-reset: page 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Afficher les en-têtes et pieds de page fixes seulement sur les pages suivantes
+    window.addEventListener('beforeprint', function() {
+        // Vérifier si le contenu dépasse une page
+        const container = document.querySelector('.a4, .a5');
+        if (container) {
+            const contentHeight = container.scrollHeight;
+            const pageHeight = 1123; // Hauteur A4 en pixels (297mm)
+            const isA5 = container.classList.contains('a5');
+            const actualPageHeight = isA5 ? 794 : 1123; // Hauteur A5 en pixels (210mm)
+            
+            // Si le contenu dépasse une page, afficher les éléments fixes
+            if (contentHeight > actualPageHeight) {
+                document.body.classList.add('show-on-subsequent-pages');
+            }
+        }
+    });
+});
 </script>
 </body>
-</html> 
+</html>
+

@@ -408,8 +408,22 @@ class ConsultationForm extends Component
         $montant = floatval($this->montant);
         
         // Récupérer le taux de prise en charge et l'assureur depuis le patient
+        // Si les données ne sont pas dans selectedPatient, les récupérer directement depuis la base
+        $patient = Patient::find($this->selectedPatient['ID']);
         $txpec = isset($this->selectedPatient['TauxPEC']) ? floatval($this->selectedPatient['TauxPEC']) : 0;
-        $fkidEtsAssurance = isset($this->selectedPatient['Assureur']) ? $this->selectedPatient['Assureur'] : null;
+        $fkidEtsAssurance = null;
+        
+        // Récupérer l'assureur depuis le patient
+        if ($patient && $patient->Assureur) {
+            $fkidEtsAssurance = $patient->Assureur;
+            // Si le taux PEC n'est pas dans selectedPatient, le récupérer depuis l'assureur
+            if ($txpec == 0 && $patient->assureur) {
+                $txpec = floatval($patient->assureur->TauxdePEC ?? 0);
+            }
+        } elseif (isset($this->selectedPatient['Assureur']) && $this->selectedPatient['Assureur'] > 0) {
+            $fkidEtsAssurance = $this->selectedPatient['Assureur'];
+        }
+        
         $totalPEC = ($montant * $txpec);
         $totalPatient = ($montant * (1 - $txpec));
 
