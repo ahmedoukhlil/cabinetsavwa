@@ -55,7 +55,6 @@
             
             /* Définir les marges pour les pages suivantes (avec en-tête et pied fixe) */
             /* La marge top doit correspondre à la hauteur réelle de l'en-tête */
-            /* Note: Pour A5, les marges seront ajustées proportionnellement via les styles CSS */
             @page {
                 size: A4;
                 margin-top: 70mm; /* Espace pour l'en-tête fixe A4 (ajusté pour inclure tout l'en-tête) */
@@ -63,7 +62,9 @@
             }
             
             /* Pour A5, ajuster les marges proportionnellement (A5 est environ 70% de A4) */
-            /* Les marges sont gérées via les styles CSS des éléments fixes */
+            /* A5: 148mm x 210mm vs A4: 210mm x 297mm */
+            /* L'en-tête A5 est plus compact, donc besoin de moins de marge */
+            /* On utilise une approche avec padding-top sur le conteneur pour A5 */
             
             /* Règles spécifiques pour A5 */
             /* Note: Les règles @page ne peuvent pas être ciblées par classe CSS directement */
@@ -210,7 +211,7 @@
             
             /* CRITIQUE : Retirer TOUTES les limitations de hauteur pour permettre le débordement */
             /* Le conteneur doit pouvoir s'étendre au-delà d'une page */
-            .a4, .a5 {
+            .a4 {
                 padding-top: 0 !important;
                 padding-bottom: 0 !important;
                 /* Retirer TOUTES les limitations de hauteur */
@@ -227,6 +228,32 @@
                 /* S'assurer qu'il n'y a pas de display flex qui limite le débordement */
                 display: block !important;
             }
+            
+            /* Pour A5, ajuster le padding-top pour éviter la superposition avec l'en-tête fixe */
+            /* L'en-tête A5 est plus compact, donc besoin de moins d'espace */
+            .a5 {
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
+                /* Retirer TOUTES les limitations de hauteur */
+                min-height: 0 !important;
+                height: auto !important;
+                max-height: none !important;
+                /* Permettre le débordement naturel - CRITIQUE pour les sauts de page */
+                overflow: visible !important;
+                /* S'assurer que le contenu peut vraiment déborder et créer de nouvelles pages */
+                page-break-inside: auto !important;
+                page-break-after: auto !important;
+                /* S'assurer que le conteneur n'a pas de position qui limite le débordement */
+                position: relative !important;
+                /* S'assurer qu'il n'y a pas de display flex qui limite le débordement */
+                display: block !important;
+            }
+            
+            /* Sur la première page A5, pas de problème car margin: 0 */
+            /* Sur les pages suivantes A5, l'en-tête fixe doit être dans la marge @page */
+            /* Mais comme @page ne peut pas être conditionnel, on ajuste via le contenu */
+            /* L'en-tête fixe A5 est plus compact, donc il prend moins de place */
+            /* On réduit la marge @page effectivement utilisée en ajustant l'en-tête fixe */
             
             /* Le body et html doivent aussi permettre le débordement */
             body, html {
@@ -341,6 +368,29 @@
             .a5 .details-table {
                 margin-bottom: 15px !important;
             }
+            
+            /* CRITIQUE : Pour A5, réduire la hauteur de l'en-tête fixe pour éviter la superposition */
+            /* L'en-tête A5 doit être plus compact pour tenir dans une marge plus petite */
+            /* On réduit les marges internes de l'en-tête fixe pour A5 */
+            .a5 .print-header-fixed .recu-header {
+                margin-bottom: 2px !important;
+            }
+            .a5 .print-header-fixed .facture-title {
+                margin-top: 5px !important;
+                margin-bottom: 12px !important;
+            }
+            .a5 .print-header-fixed .bloc-patient {
+                margin: 0 0 5px 0 !important;
+            }
+            .a5 .print-header-fixed .bloc-patient-table {
+                margin-bottom: 5px !important;
+            }
+            
+            /* Pour A5, ajuster la marge @page effectivement utilisée */
+            /* Comme @page ne peut pas être conditionnel, on compense via le contenu */
+            /* Le conteneur A5 doit avoir un padding-top sur la première page pour éviter la superposition */
+            /* Mais sur la première page, margin: 0 donc pas de problème */
+            /* Sur les pages suivantes, l'en-tête fixe A5 est plus compact donc prend moins de place dans la marge */
             
             /* Les règles @page sont définies plus haut pour gérer les marges */
             /* Note: Les règles @page ne peuvent pas être conditionnelles selon la classe */
@@ -667,6 +717,34 @@ function updatePageFormat() {
     const isA5 = elements.pageFormat.value === 'A5';
     elements.container.classList.toggle('a4', !isA5);
     elements.container.classList.toggle('a5', isA5);
+    
+    // Injecter une règle @page spécifique pour A5 avec marge réduite
+    // Pour éviter la superposition de l'en-tête fixe avec le contenu
+    let a5PageStyle = document.getElementById('a5-page-style');
+    if (isA5) {
+        if (!a5PageStyle) {
+            a5PageStyle = document.createElement('style');
+            a5PageStyle.id = 'a5-page-style';
+            a5PageStyle.textContent = `
+                @media print {
+                    @page {
+                        size: A5;
+                        margin-top: 50mm !important; /* Marge réduite pour A5 (au lieu de 70mm) */
+                        margin-bottom: 0 !important;
+                    }
+                    @page:first {
+                        size: A5;
+                        margin: 0 !important;
+                    }
+                }
+            `;
+            document.head.appendChild(a5PageStyle);
+        }
+    } else {
+        if (a5PageStyle) {
+            a5PageStyle.remove();
+        }
+    }
 }
 
 // Gestion de la pagination avec compteur CSS
@@ -683,6 +761,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     `;
     document.head.appendChild(style);
+    
+    // Appeler updatePageFormat au chargement pour initialiser les styles A5 si nécessaire
+    updatePageFormat();
     
     // Fonction pour détecter si le contenu dépasse une page
     // Le navigateur gère automatiquement les sauts de page, mais on active les en-têtes/pieds fixes
@@ -712,6 +793,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Toujours activer le mode multi-pages en impression pour s'assurer que les en-têtes/pieds s'affichent
     window.addEventListener('beforeprint', function() {
+        // S'assurer que les styles A5 sont appliqués avant l'impression
+        updatePageFormat();
+        
         // Activer immédiatement le mode multi-pages
         document.body.classList.add('has-multiple-pages');
         
