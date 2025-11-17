@@ -52,7 +52,7 @@
                 margin: 0;
             }
             
-            /* Définir les marges pour les pages suivantes (avec en-tête/pied fixe) */
+            /* Définir les marges pour les pages suivantes (avec en-tête et pied fixe) */
             @page {
                 margin-top: 60mm; /* Espace pour l'en-tête fixe */
                 margin-bottom: 25mm; /* Espace pour le pied de page fixe */
@@ -92,7 +92,6 @@
                 background: #fff;
                 z-index: 1000;
                 padding: 5mm 18mm;
-                border-top: 1px solid #ddd;
                 text-align: center;
             }
             .a5 .print-footer-fixed {
@@ -102,15 +101,6 @@
             /* Afficher le pied de page fixe seulement sur les pages suivantes */
             body.has-multiple-pages .print-footer-fixed {
                 display: block;
-            }
-            
-            /* Ajouter le numéro de page au pied de page */
-            .print-footer-fixed::after {
-                content: "Page " counter(page);
-                display: block;
-                margin-top: 5px;
-                font-size: 10px;
-                color: #666;
             }
             
             /* Sur la première page, garder les en-têtes et pieds de page originaux visibles */
@@ -179,9 +169,9 @@
     </style>
 </head>
 <body>
-<!-- En-tête fixe pour pagination (uniquement avec partials) -->
+<!-- En-tête fixe pour pagination (identique à la première page) -->
 <div class="print-header-fixed">
-    @include('partials.recu-header')
+    <div class="recu-header">@include('partials.recu-header')</div>
     <div class="facture-title" style="font-size: 18px; margin: 10px 0; text-align: center;">{{ $facture->Type ?: 'FACTURE' }}</div>
     <div class="bloc-patient" style="margin: 5px 0;">
         <table class="bloc-patient-table" style="font-size: 10px; width: 100%;">
@@ -201,13 +191,35 @@
                     <span class="ref-value">{{ $facture->DtFacture ? $facture->DtFacture->format('d/m/Y H:i') : 'N/A' }}</span>
                 </td>
             </tr>
+            <tr>
+                <td class="label">Téléphone :</td>
+                <td class="value">{{ $facture->patient->Telephone1 ?? 'N/A' }}</td>
+                <td colspan="2"></td>
+            </tr>
+            <tr>
+                <td class="label">Praticien :</td>
+                <td class="value">{{ $facture->medecin->Nom ?? '' }}</td>
+                <td colspan="2"></td>
+            </tr>
+            @if($facture->patient && $facture->patient->assureur)
+            <tr>
+                <td class="label">Assureur :</td>
+                <td class="value">
+                    {{ $facture->patient->assureur->LibAssurance ?? 'N/A' }}
+                    @if($facture->patient->IdentifiantAssurance)
+                        ({{ $facture->patient->IdentifiantAssurance }})
+                    @endif
+                </td>
+                <td colspan="2"></td>
+            </tr>
+            @endif
         </table>
     </div>
 </div>
 
-<!-- Pied de page fixe pour pagination (uniquement avec partial) -->
+<!-- Pied de page fixe pour pagination (identique à la première page) -->
 <div class="print-footer-fixed">
-    @include('partials.recu-footer')
+    <div class="recu-footer">@include('partials.recu-footer')</div>
 </div>
 
 <div class="a4" id="documentContainer">
