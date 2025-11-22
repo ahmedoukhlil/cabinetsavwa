@@ -145,16 +145,6 @@
             position: relative;
         }
         
-        /* Ligne verticale centrale pour guide */
-        .ordonnance-body::after {
-            content: '';
-            position: absolute;
-            right: 50%;
-            top: 10px;
-            height: 120px;
-            width: 1px;
-            background: #000;
-        }
 
         .medication-item {
             margin-bottom: 18px;
@@ -266,9 +256,6 @@
                 right: 15mm;
             }
 
-            .ordonnance-body::after {
-                display: block;
-            }
 
             @page {
                 margin: 0;
