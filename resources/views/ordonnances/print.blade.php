@@ -310,14 +310,19 @@
         <div class="patient-info">
             <!-- Ligne 1 : Date seule -->
             <div class="info-row" style="margin-bottom: 10px; justify-content: flex-end;">
-                <span><strong>Date : {{ isset($ordonnance->dtPrescript) ? \Carbon\Carbon::parse($ordonnance->dtPrescript)->format('d/m/Y') : '...................' }}</strong></span>
+                @php
+                    $isBlank = !isset($ordonnance->patient) || empty($ordonnance->refOrd);
+                @endphp
+                <span><strong>Date : {{ !$isBlank && isset($ordonnance->dtPrescript) ? \Carbon\Carbon::parse($ordonnance->dtPrescript)->format('d/m/Y') : '.....................' }}</strong></span>
             </div>
             
             <!-- Ligne 2 : Nom et Prénom -->
             <div class="info-row" style="margin-bottom: 10px;">
                 <div style="width: 100%; display: flex; justify-content: space-between; align-items: baseline;">
                     <span><strong>Nom et Prénom :</strong></span>
-                    <span style="flex: 1; text-align: center;"><strong>{{ isset($ordonnance->patient) ? $ordonnance->patient->NomContact : '................................................' }}</strong></span>
+                    <span style="flex: 1; text-align: center; border-bottom: 1px dotted #000; margin: 0 5px;">
+                        <strong>{{ isset($ordonnance->patient) && $ordonnance->patient->NomContact ? $ordonnance->patient->NomContact : '' }}</strong>
+                    </span>
                     <span style="direction: rtl;"><strong>الاسم و اللقب :</strong></span>
                 </div>
             </div>
