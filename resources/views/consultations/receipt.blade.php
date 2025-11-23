@@ -6,13 +6,21 @@
     <title>REÇU DE CONSULTATION</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fff; font-size: 12px; }
-        .a4 { width: 210mm; min-height: 297mm; margin: auto; background: #fff; padding: 0 18mm 0 10mm; position: relative; box-sizing: border-box; display: flex; flex-direction: column; min-height: 297mm; }
-        .a5 { width: 148mm; min-height: 210mm; margin: auto; background: #fff; padding: 0 10mm 0 5mm; position: relative; box-sizing: border-box; display: flex; flex-direction: column; min-height: 210mm; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #fff; font-size: 12px; overflow-x: hidden; }
+        .a4 { width: 210mm; min-height: 297mm; margin: auto; background: #fff; padding: 0 18mm 0 10mm; position: relative; box-sizing: border-box; display: flex; flex-direction: column; min-height: 297mm; overflow-x: hidden; max-width: 100%; }
+        .a5 { width: 148mm; min-height: 210mm; margin: auto; background: #fff; padding: 3mm 8mm 5mm 5mm; position: relative; box-sizing: border-box; display: flex; flex-direction: column; min-height: 210mm; overflow-x: hidden; max-width: 100%; }
+        /* Conteneur pour le contenu avant le tableau */
+        .content-before-table { 
+            overflow: visible;
+            page-break-inside: avoid; /* Évite de couper le contenu en deux */
+        }
+        .a5 .content-before-table { 
+            /* Pas de limitation de hauteur pour A5 non plus */
+        }
         .facture-title { text-align: center; font-size: 22px; font-weight: bold; margin-top: 10px; margin-bottom: 28px; letter-spacing: 2px; }
-        .a5 .facture-title { font-size: 18px; margin-bottom: 20px; }
+        .a5 .facture-title { font-size: 16px; margin-top: 5px; margin-bottom: 12px; letter-spacing: 1px; }
         .bloc-patient { margin: 0 0 10px 0; }
-        .bloc-patient-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        .bloc-patient-table { width: 100%; max-width: 100%; border-collapse: collapse; margin-bottom: 10px; table-layout: fixed; word-wrap: break-word; }
         .bloc-patient-table td { padding: 2px 8px; font-size: 12px; }
         .a5 .bloc-patient-table td { font-size: 10px; padding: 1px 4px; }
         .bloc-patient-table .label { font-weight: bold; color: #222; width: 80px; }
@@ -20,13 +28,29 @@
         .bloc-patient-table .ref-cell { text-align: right; padding: 2px 4px; }
         .bloc-patient-table .ref-label { font-weight: bold; padding-right: 3px; display: inline; }
         .bloc-patient-table .ref-value { display: inline; }
-        .details-table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+        .details-table { width: 100%; max-width: 100%; border-collapse: collapse; margin-bottom: 0; page-break-inside: auto; table-layout: fixed; word-wrap: break-word; }
         .details-table th, .details-table td { border: 1px solid #222; font-size: 12px; padding: 6px 8px; }
         .a5 .details-table th, .a5 .details-table td { font-size: 10px; padding: 4px 6px; }
         .details-table th { background: #f4f6fa; text-align: center; }
         .details-table td { text-align: center; }
         .details-table th:first-child, .details-table td:first-child { text-align: left; }
         .details-table th:last-child, .details-table td:last-child { width: 40%; text-align: left; }
+        /* Gestion des sauts de page pour les lignes de tableau */
+        .details-table tbody tr { 
+            page-break-inside: avoid; 
+            page-break-after: auto;
+        }
+        .details-table thead { 
+            display: table-header-group; 
+        }
+        .details-table tfoot { 
+            display: table-footer-group; 
+        }
+        /* Répéter les en-têtes de tableau sur chaque page */
+        .details-table thead tr {
+            page-break-inside: avoid;
+            page-break-after: avoid;
+        }
         .totaux-table { width: 40%; border-collapse: collapse; margin-top: 0; margin-bottom: 0; margin-left: auto; }
         .totaux-table td { border: 1px solid #222; font-size: 12px; padding: 6px 8px; text-align: right; }
         .a5 .totaux-table td { font-size: 10px; padding: 4px 6px; }
@@ -35,6 +59,14 @@
         .recu-header, .recu-footer { width: 100%; text-align: center; }
         .recu-header img, .recu-footer img { max-width: 100%; height: auto; }
         .recu-footer { position: absolute; bottom: 0; left: 0; width: 100%; }
+        /* Styles spécifiques pour l'en-tête en format A5 */
+        .a5 .recu-header { margin-bottom: 5px !important; }
+        .a5 .recu-header .header { margin-bottom: 5px !important; }
+        .a5 .recu-header .header > div { margin-bottom: 5px !important; }
+        .a5 .recu-header img { max-height: 50px !important; max-width: 100% !important; object-fit: contain !important; }
+        .a5 .recu-header h1 { font-size: 12px !important; margin: 2px 0 !important; line-height: 1.2 !important; }
+        .a5 .recu-header p { font-size: 9px !important; margin: 1px 0 !important; line-height: 1.2 !important; }
+        .a5 .recu-header .text-center { margin-bottom: 3px !important; }
         @media print { 
             .a4, .a5 { box-shadow: none; } 
             .recu-footer { position: fixed; bottom: 0; left: 0; width: 100%; } 
@@ -43,6 +75,77 @@
             .qr-code-link { color: #000 !important; }
             .qr-code-container { background: #fff !important; }
             a { color: #000 !important; text-decoration: none !important; }
+            
+            /* Gestion des sauts de page pour les tableaux */
+            .details-table { 
+                page-break-inside: auto; 
+                border-collapse: collapse;
+                page-break-before: auto; /* Permet le saut avant le tableau si nécessaire */
+            }
+            .details-table tbody tr { 
+                page-break-inside: avoid; 
+                page-break-after: auto;
+            }
+            .details-table thead { 
+                display: table-header-group; 
+                page-break-after: avoid;
+            }
+            .details-table thead tr {
+                page-break-inside: avoid;
+                page-break-after: avoid;
+            }
+            .details-table tfoot { 
+                display: table-footer-group; 
+                page-break-before: avoid;
+            }
+            
+            /* Répéter les en-têtes sur chaque page */
+            .details-table thead {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            /* Éviter les sauts de page inutiles */
+            .details-table:first-of-type {
+                page-break-before: auto; /* Ne force plus le saut, laisse le navigateur décider */
+            }
+            
+            /* Ajuster la hauteur du contenu avant le tableau pour éviter le débordement */
+            .content-before-table {
+                max-height: none !important; /* Supprime la limitation de hauteur */
+                page-break-after: auto;
+                page-break-inside: avoid; /* Évite de couper le contenu */
+            }
+            .a5 .content-before-table {
+                max-height: none !important; /* Supprime la limitation de hauteur */
+            }
+            
+            /* Éviter de couper les éléments importants */
+            .bloc-patient { page-break-inside: avoid; }
+            .facture-title { page-break-after: avoid; }
+            .ordre-rdv { 
+                page-break-inside: avoid; 
+                page-break-after: avoid; 
+                margin: 10px auto !important; /* Réduit les marges pour l'impression */
+            }
+            .totaux-table { page-break-inside: avoid; }
+            .montant-lettres { page-break-inside: avoid; }
+            .signature-block { page-break-inside: avoid; }
+            
+            /* Permettre les sauts de page pour les sections */
+            .section-header { 
+                page-break-after: avoid;
+                page-break-inside: avoid;
+            }
+            
+            /* Gestion des sauts de page pour les conteneurs */
+            .a4, .a5 {
+                page-break-after: auto;
+                orphans: 3;
+                widows: 3;
+                min-height: auto !important; /* Permet au contenu de s'adapter à la page */
+                height: auto !important; /* Évite les hauteurs fixes qui causent des débordements */
+            }
         }
         .print-controls { display: flex; gap: 10px; justify-content: flex-end; margin: 18px 0; }
         .print-controls select, .print-controls button { padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
@@ -92,23 +195,26 @@
         }
         .ordre-rdv {
             display: block;
-            background: #2c5282;
+            background: #1a365d;
             color: white;
             font-weight: bold;
-            font-size: 14px;
-            padding: 8px 16px;
-            border-radius: 6px;
-            border: 2px solid #1a365d;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            margin: 15px auto;
+            font-size: 24px;
+            padding: 15px 30px;
+            border-radius: 10px;
+            border: 3px solid #2c5282;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 20px rgba(26, 54, 93, 0.4);
+            margin: 20px auto;
             text-align: center;
             width: fit-content;
-            min-width: 80px;
+            min-width: 120px;
+            max-width: 100%;
+            box-sizing: border-box;
+            letter-spacing: 2px;
         }
         .a5 .ordre-rdv {
-            font-size: 12px;
-            padding: 6px 12px;
-            min-width: 70px;
+            font-size: 18px;
+            padding: 12px 24px;
+            min-width: 100px;
         }
         
         .print-controls {
@@ -172,8 +278,8 @@
         
         /* Responsive Design Complet */
         @media (max-width: 1200px) {
-            .a4 { width: 95%; margin: 10px auto; }
-            .a5 { width: 90%; margin: 10px auto; }
+            .a4 { width: 95%; margin: 10px auto; overflow-x: hidden; max-width: 100%; }
+            .a5 { width: 90%; margin: 10px auto; overflow-x: hidden; max-width: 100%; }
         }
         
         @media (max-width: 768px) {
@@ -182,6 +288,8 @@
                 margin: 5px; 
                 padding: 10px; 
                 min-height: auto;
+                overflow-x: hidden;
+                max-width: 100%;
             }
             
             .facture-title { 
@@ -212,10 +320,10 @@
             }
             
             .ordre-rdv {
-                font-size: 12px;
-                padding: 6px 12px;
-                min-width: 70px;
-                margin: 10px auto;
+                font-size: 18px;
+                padding: 12px 24px;
+                min-width: 100px;
+                margin: 15px auto;
             }
             
             .print-controls {
@@ -254,6 +362,8 @@
             .a4, .a5 { 
                 padding: 5px; 
                 margin: 2px;
+                overflow-x: hidden;
+                max-width: 100%;
             }
             
             .facture-title { 
@@ -292,10 +402,10 @@
             }
             
             .ordre-rdv {
-                font-size: 11px;
-                padding: 5px 10px;
-                min-width: 60px;
-                margin: 8px auto;
+                font-size: 16px;
+                padding: 10px 20px;
+                min-width: 90px;
+                margin: 12px auto;
             }
             
             .print-controls {
@@ -364,10 +474,10 @@
             }
             
             .ordre-rdv {
-                font-size: 10px;
-                padding: 4px 8px;
-                min-width: 50px;
-                margin: 6px auto;
+                font-size: 14px;
+                padding: 8px 16px;
+                min-width: 80px;
+                margin: 10px auto;
             }
             
             .print-controls select,
@@ -436,7 +546,7 @@
             <option value="A4">Format A4</option>
             <option value="A5">Format A5</option>
         </select>
-        <button onclick="window.print()" class="print-btn">
+        <button onclick="printDocument()" class="print-btn">
             Imprimer
         </button>
         
@@ -456,13 +566,14 @@
         @endif
     </div>
     <div class="recu-header">@include('partials.recu-header')</div>
-    <div class="facture-title">REÇU DE CONSULTATION</div>
-    
-    @if($facture->rendezVous && $facture->rendezVous->OrdreRDV)
-        <div class="ordre-rdv">N° {{ str_pad($facture->rendezVous->OrdreRDV, 3, '0', STR_PAD_LEFT) }}</div>
-    @endif
-    
-    <div class="bloc-patient">
+    <div class="content-before-table">
+        <div class="facture-title">REÇU DE CONSULTATION</div>
+        
+        @if($facture->rendezVous && $facture->rendezVous->OrdreRDV)
+            <div class="ordre-rdv">N° {{ str_pad($facture->rendezVous->OrdreRDV, 3, '0', STR_PAD_LEFT) }}</div>
+        @endif
+        
+        <div class="bloc-patient">
         <table class="bloc-patient-table">
             <tr>
                 <td class="label">N° Fiche :</td>
@@ -492,6 +603,7 @@
             </tr>
         </table>
     </div>
+    </div> <!-- Fin du conteneur content-before-table -->
     @php
         $detailsGroupes = $facture->getDetailsGroupesParType();
     @endphp
@@ -619,7 +731,36 @@ function updatePageFormat() {
     const isA5 = elements.pageFormat.value === 'A5';
     elements.container.classList.toggle('a4', !isA5);
     elements.container.classList.toggle('a5', isA5);
+    
+    // Mettre à jour la règle @page pour l'impression
+    let style = document.getElementById('print-format-style');
+    if (!style) {
+        style = document.createElement('style');
+        style.id = 'print-format-style';
+        document.head.appendChild(style);
+    }
+    
+    if (isA5) {
+        style.innerHTML = '@media print { @page { size: A5; margin: 8mm; } }';
+    } else {
+        style.innerHTML = '@media print { @page { size: A4; margin: 10mm; } }';
+    }
 }
+
+// Fonction pour imprimer avec le bon format
+function printDocument() {
+    // S'assurer que le format est à jour avant l'impression
+    updatePageFormat();
+    // Petit délai pour s'assurer que le style est appliqué
+    setTimeout(function() {
+        window.print();
+    }, 100);
+}
+
+// Initialiser le format au chargement de la page
+document.addEventListener('DOMContentLoaded', function() {
+    updatePageFormat();
+});
 
 // Fonction globale WhatsApp pour cette page
 if (typeof window.whatsappWindow === 'undefined') {
