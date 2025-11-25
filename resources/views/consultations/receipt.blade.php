@@ -126,7 +126,41 @@
             .ordre-rdv { 
                 page-break-inside: avoid; 
                 page-break-after: avoid; 
-                margin: 10px auto !important; /* Réduit les marges pour l'impression */
+                margin: 8px auto !important;
+                background: #000000 !important; /* Fond noir pour meilleur contraste à l'impression */
+                color: #ffffff !important;
+                border: 2px solid #000000 !important;
+                font-size: 16px !important;
+                font-weight: 700 !important;
+                padding: 8px 16px !important;
+                letter-spacing: 1px !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                box-shadow: none !important;
+            }
+            .ordre-rdv > div:first-child {
+                font-size: 0.5em !important;
+                font-weight: 600 !important;
+                letter-spacing: 0.5px !important;
+                margin-bottom: 3px !important;
+                opacity: 1 !important;
+            }
+            .ordre-rdv > div:last-child {
+                font-size: 1.15em !important;
+                font-weight: 700 !important;
+                letter-spacing: 1.5px !important;
+            }
+            .a5 .ordre-rdv {
+                font-size: 14px !important;
+                padding: 6px 14px !important;
+                letter-spacing: 1px !important;
+            }
+            .a5 .ordre-rdv > div:first-child {
+                font-size: 0.5em !important;
+            }
+            .a5 .ordre-rdv > div:last-child {
+                font-size: 1.1em !important;
+                letter-spacing: 1.5px !important;
             }
             .totaux-table { page-break-inside: avoid; }
             .montant-lettres { page-break-inside: avoid; }
@@ -198,23 +232,25 @@
             background: #1a365d;
             color: white;
             font-weight: bold;
-            font-size: 24px;
-            padding: 15px 30px;
-            border-radius: 10px;
-            border: 3px solid #2c5282;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3), 0 0 20px rgba(26, 54, 93, 0.4);
-            margin: 20px auto;
+            font-size: 14px;
+            padding: 6px 15px;
+            border-radius: 6px;
+            border: 2px solid #2c5282;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            margin: 10px auto;
             text-align: center;
             width: fit-content;
-            min-width: 120px;
+            min-width: 100px;
             max-width: 100%;
             box-sizing: border-box;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
         .a5 .ordre-rdv {
-            font-size: 18px;
-            padding: 12px 24px;
-            min-width: 100px;
+            font-size: 12px;
+            padding: 5px 12px;
+            min-width: 90px;
+            letter-spacing: 0.5px;
         }
         
         .print-controls {
@@ -320,10 +356,16 @@
             }
             
             .ordre-rdv {
-                font-size: 18px;
-                padding: 12px 24px;
-                min-width: 100px;
-                margin: 15px auto;
+                font-size: 13px;
+                padding: 6px 15px;
+                min-width: 95px;
+                margin: 10px auto;
+            }
+            .ordre-rdv > div:first-child {
+                font-size: 0.5em !important;
+            }
+            .ordre-rdv > div:last-child {
+                font-size: 1.1em !important;
             }
             
             .print-controls {
@@ -402,10 +444,16 @@
             }
             
             .ordre-rdv {
-                font-size: 16px;
-                padding: 10px 20px;
+                font-size: 12px;
+                padding: 6px 14px;
                 min-width: 90px;
-                margin: 12px auto;
+                margin: 8px auto;
+            }
+            .ordre-rdv > div:first-child {
+                font-size: 0.48em !important;
+            }
+            .ordre-rdv > div:last-child {
+                font-size: 1.1em !important;
             }
             
             .print-controls {
@@ -474,10 +522,16 @@
             }
             
             .ordre-rdv {
-                font-size: 14px;
-                padding: 8px 16px;
-                min-width: 80px;
-                margin: 10px auto;
+                font-size: 11px;
+                padding: 5px 12px;
+                min-width: 85px;
+                margin: 6px auto;
+            }
+            .ordre-rdv > div:first-child {
+                font-size: 0.45em !important;
+            }
+            .ordre-rdv > div:last-child {
+                font-size: 1.05em !important;
             }
             
             .print-controls select,
@@ -569,8 +623,11 @@
     <div class="content-before-table">
         <div class="facture-title">REÇU DE CONSULTATION</div>
         
-        @if($facture->rendezVous && $facture->rendezVous->OrdreRDV)
-            <div class="ordre-rdv">N° {{ str_pad($facture->rendezVous->OrdreRDV, 3, '0', STR_PAD_LEFT) }}</div>
+        @if($facture->rendezVous && isset($facture->rendezVous->OrdreRDV) && $facture->rendezVous->OrdreRDV > 0)
+            <div class="ordre-rdv">
+                <div style="font-size: 0.5em; letter-spacing: 0.5px; margin-bottom: 2px; opacity: 0.9;">NUMÉRO DE RENDEZ-VOUS</div>
+                <div style="font-size: 1.1em; line-height: 1.2;">N° {{ str_pad($facture->rendezVous->OrdreRDV, 3, '0', STR_PAD_LEFT) }}</div>
+            </div>
         @endif
         
         <div class="bloc-patient">
@@ -908,7 +965,7 @@ async function envoyerConfirmationWhatsApp() {
         
         heureConsultation = "{{ $heureFormatee ?: 'À définir' }}";
         
-        @if($facture->rendezVous->OrdreRDV && $facture->rendezVous->OrdreRDV > 0)
+        @if(isset($facture->rendezVous->OrdreRDV) && $facture->rendezVous->OrdreRDV > 0)
             ordreConsultation = "{{ str_pad($facture->rendezVous->OrdreRDV, 3, '0', STR_PAD_LEFT) }}";
         @else
             ordreConsultation = "À définir";

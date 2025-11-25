@@ -15,9 +15,9 @@ class PatientManager extends Component
 
     // Propriétés pour la recherche et le filtrage
     public $search = '';
-    public $sortField = 'Nom';
+    public $sortField = 'IdentifiantPatient';
     public $sortDirection = 'asc';
-    public $showInactive = false;
+    public $showInactive = true; // Par défaut, afficher tous les patients
     public $showModal = false;
     public $isAssured = false;
     public $searchBy = 'all'; // all, name, nni, phone
@@ -49,6 +49,22 @@ class PatientManager extends Component
     protected $listeners = [
         'openPatientCreateModal' => 'openModal',
     ];
+
+    // Réinitialiser la page lors des changements de recherche ou de filtre
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedShowInactive()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSearchBy()
+    {
+        $this->resetPage();
+    }
 
     public function rules()
     {
@@ -104,7 +120,7 @@ class PatientManager extends Component
     {
         $this->creationOnly = $creationOnly;
         $this->resetForm();
-        $this->showInactive = false;
+        $this->showInactive = true; // Par défaut, afficher tous les patients
         
         // Si on est en mode création uniquement, ouvrir automatiquement le modal
         if ($this->creationOnly) {
@@ -120,6 +136,8 @@ class PatientManager extends Component
             $this->sortField = $field;
             $this->sortDirection = 'asc';
         }
+        // Réinitialiser à la première page lors du changement de tri
+        $this->resetPage();
     }
 
     public function resetForm()
@@ -263,6 +281,10 @@ class PatientManager extends Component
     public function render()
     {
         $query = Patient::query()
+            // Appliquer le filtre uniquement si l'utilisateur choisit de masquer les inactifs
+            ->when(!$this->showInactive, function($query) {
+                $query->where('choix', 0);
+            })
             ->when($this->search, function($query) {
                 $query->where(function($q) {
                     switch($this->searchBy) {
@@ -286,7 +308,13 @@ class PatientManager extends Component
                     }
                 });
             })
-            ->orderBy($this->sortField, $this->sortDirection);
+            ->when($this->sortField === 'IdentifiantPatient', function($query) {
+                // Tri numérique pour le N° Fiche
+                $query->orderByRaw('CAST(IdentifiantPatient AS UNSIGNED) ' . $this->sortDirection);
+            }, function($query) {
+                // Tri normal pour les autres champs
+                $query->orderBy($this->sortField, $this->sortDirection);
+            });
 
         $patients = $query->with('assureur')->paginate(10);
 

@@ -18,7 +18,7 @@
         <div class="flex items-center space-x-4">
             <label class="flex items-center space-x-2 text-sm text-gray-600">
                 <input type="checkbox" wire:model="showInactive" class="form-checkbox h-4 w-4 text-primary rounded border-gray-300 focus:ring-primary">
-                <span>Afficher les patients inactifs</span>
+                <span>Masquer les patients inactifs</span>
             </label>
             <button wire:click="openModal" class="inline-flex items-center px-4 py-2 bg-primary border border-transparent rounded-lg font-semibold text-white hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200">
                 Nouveau Patient
@@ -61,9 +61,36 @@
             <table class="w-full min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th scope="col" class="px-3 py-2 w-1/12 text-center">N° Fiche</th>
-                        <th scope="col" class="px-3 py-2 w-1/4">Nom</th>
-                        <th scope="col" class="px-3 py-2 w-1/6">Téléphone</th>
+                        <th scope="col" class="px-3 py-2 w-1/12 text-center">
+                            <button wire:click="sortBy('IdentifiantPatient')" class="flex items-center justify-center w-full text-left font-medium text-gray-700 hover:text-gray-900 focus:outline-none">
+                                N° Fiche
+                                @if($sortField === 'IdentifiantPatient')
+                                    <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1 text-primary"></i>
+                                @else
+                                    <i class="fas fa-sort ml-1 text-gray-400"></i>
+                                @endif
+                            </button>
+                        </th>
+                        <th scope="col" class="px-3 py-2 w-1/4">
+                            <button wire:click="sortBy('Prenom')" class="flex items-center w-full text-left font-medium text-gray-700 hover:text-gray-900 focus:outline-none">
+                                Nom
+                                @if($sortField === 'Prenom')
+                                    <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1 text-primary"></i>
+                                @else
+                                    <i class="fas fa-sort ml-1 text-gray-400"></i>
+                                @endif
+                            </button>
+                        </th>
+                        <th scope="col" class="px-3 py-2 w-1/6">
+                            <button wire:click="sortBy('Telephone1')" class="flex items-center w-full text-left font-medium text-gray-700 hover:text-gray-900 focus:outline-none">
+                                Téléphone
+                                @if($sortField === 'Telephone1')
+                                    <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ml-1 text-primary"></i>
+                                @else
+                                    <i class="fas fa-sort ml-1 text-gray-400"></i>
+                                @endif
+                            </button>
+                        </th>
                         <th scope="col" class="px-3 py-2 w-1/12 text-center">Genre</th>
                         <th scope="col" class="px-3 py-2 w-1/4">Assurance</th>
                         <th scope="col" class="px-3 py-2 w-1/12 text-center">Actions</th>
@@ -126,8 +153,14 @@
                 </tbody>
             </table>
         </div>
-        <div class="px-6 py-4 border-t border-gray-200">
-            {{ $patients->links() }}
+        <div class="px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="text-sm text-gray-700">
+                Affichage de <span class="font-medium">{{ $patients->firstItem() }}</span> à <span class="font-medium">{{ $patients->lastItem() }}</span> 
+                sur <span class="font-medium">{{ $patients->total() }}</span> patient(s)
+            </div>
+            <div>
+                {{ $patients->links() }}
+            </div>
         </div>
     </div>
     @endif
