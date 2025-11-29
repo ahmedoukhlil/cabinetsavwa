@@ -66,6 +66,13 @@ class PharmacieManager extends Component
     public $alertesStockFaible = 0;
     public $alertesExpires = 0;
     public $alertesExpireBientot = 0;
+    
+    // Modals pour les détails
+    public $showDetailModal = false;
+    public $detailType = ''; // 'total', 'valeur', 'quantite', 'rupture', 'faible', 'expires', 'expire_bientot', 'entrees', 'sorties'
+    public $detailData = [];
+    public $detailPage = 1;
+    public $detailPerPage = 20;
 
     protected $paginationTheme = 'bootstrap';
     
@@ -802,6 +809,283 @@ class PharmacieManager extends Component
         return Medicament::where('fkidtype', 1) // Uniquement les médicaments
             ->orderBy('LibelleMedic', 'asc')
             ->get();
+    }
+
+    // ========== MÉTHODES POUR LES DÉTAILS ==========
+    
+    public function ouvrirDetailModal($type)
+    {
+        $this->detailType = $type;
+        $this->detailPage = 1;
+        $cabinetId = Auth::user()->fkidcabinet;
+        
+        switch ($type) {
+            case 'total':
+                $this->detailData = StockMedicament::where('fkidCabinet', $cabinetId)
+                    ->where('Masquer', 0)
+                    ->whereHas('medicament', function($q) {
+                        $q->where('fkidtype', 1);
+                    })
+                    ->with('medicament')
+                    ->orderBy('quantiteStock', 'desc')
+                    ->get()
+                    ->map(function($stock) {
+                        return [
+                            'medicament' => $stock->medicament->LibelleMedic ?? 'N/A',
+                            'quantite' => $stock->quantiteStock,
+                            'seuil_min' => $stock->quantiteMin,
+                            'prix_achat' => $stock->prixAchat,
+                            'prix_vente' => $stock->prixVente,
+                            'valeur' => $stock->quantiteStock * $stock->prixAchat,
+                            'statut' => $stock->isStockFaible() ? 'faible' : ($stock->quantiteStock == 0 ? 'rupture' : 'ok')
+                        ];
+                    })
+                    ->toArray();
+                break;
+                
+            case 'valeur':
+                $this->detailData = StockMedicament::where('fkidCabinet', $cabinetId)
+                    ->where('Masquer', 0)
+                    ->whereHas('medicament', function($q) {
+                        $q->where('fkidtype', 1);
+                    })
+                    ->with('medicament')
+                    ->get()
+                    ->map(function($stock) {
+                        return [
+                            'medicament' => $stock->medicament->LibelleMedic ?? 'N/A',
+                            'quantite' => $stock->quantiteStock,
+                            'prix_achat' => $stock->prixAchat,
+                            'valeur' => $stock->quantiteStock * $stock->prixAchat,
+                        ];
+                    })
+                    ->sortByDesc('valeur')
+                    ->values()
+                    ->toArray();
+                break;
+                
+            case 'quantite':
+                $this->detailData = StockMedicament::where('fkidCabinet', $cabinetId)
+                    ->where('Masquer', 0)
+                    ->whereHas('medicament', function($q) {
+                        $q->where('fkidtype', 1);
+                    })
+                    ->with('medicament')
+                    ->orderBy('quantiteStock', 'desc')
+                    ->get()
+                    ->map(function($stock) {
+                        return [
+                            'medicament' => $stock->medicament->LibelleMedic ?? 'N/A',
+                            'quantite' => $stock->quantiteStock,
+                            'seuil_min' => $stock->quantiteMin,
+                        ];
+                    })
+                    ->toArray();
+                break;
+                
+            case 'rupture':
+                $this->detailData = StockMedicament::where('fkidCabinet', $cabinetId)
+                    ->where('quantiteStock', '<=', 0)
+                    ->where('Masquer', 0)
+                    ->whereHas('medicament', function($q) {
+                        $q->where('fkidtype', 1);
+                    })
+                    ->with('medicament')
+                    ->get()
+                    ->map(function($stock) {
+                        return [
+                            'medicament' => $stock->medicament->LibelleMedic ?? 'N/A',
+                            'quantite' => $stock->quantiteStock,
+                            'seuil_min' => $stock->quantiteMin,
+                            'prix_achat' => $stock->prixAchat,
+                        ];
+                    })
+                    ->toArray();
+                break;
+                
+            case 'faible':
+                $this->detailData = StockMedicament::where('fkidCabinet', $cabinetId)
+                    ->whereColumn('quantiteStock', '<=', 'quantiteMin')
+                    ->where('quantiteStock', '>', 0)
+                    ->where('Masquer', 0)
+                    ->whereHas('medicament', function($q) {
+                        $q->where('fkidtype', 1);
+                    })
+                    ->with('medicament')
+                    ->orderBy('quantiteStock', 'asc')
+                    ->get()
+                    ->map(function($stock) {
+                        return [
+                            'medicament' => $stock->medicament->LibelleMedic ?? 'N/A',
+                            'quantite' => $stock->quantiteStock,
+                            'seuil_min' => $stock->quantiteMin,
+                            'difference' => $stock->quantiteMin - $stock->quantiteStock,
+                            'prix_achat' => $stock->prixAchat,
+                        ];
+                    })
+                    ->toArray();
+                break;
+                
+            case 'expires':
+                $this->detailData = LotMedicament::whereHas('stock', function($q) use ($cabinetId) {
+                        $q->where('fkidCabinet', $cabinetId);
+                    })
+                    ->whereNotNull('dateExpiration')
+                    ->where('dateExpiration', '<', Carbon::now())
+                    ->where('quantiteRestante', '>', 0)
+                    ->where('Masquer', 0)
+                    ->with(['medicament', 'stock'])
+                    ->orderBy('dateExpiration', 'asc')
+                    ->get()
+                    ->map(function($lot) {
+                        return [
+                            'medicament' => $lot->medicament->LibelleMedic ?? 'N/A',
+                            'numero_lot' => $lot->numeroLot,
+                            'quantite' => $lot->quantiteRestante,
+                            'date_expiration' => $lot->dateExpiration ? Carbon::parse($lot->dateExpiration)->format('d/m/Y') : 'N/A',
+                            'jours_expires' => $lot->dateExpiration ? Carbon::parse($lot->dateExpiration)->diffInDays(Carbon::now(), false) : null,
+                        ];
+                    })
+                    ->toArray();
+                break;
+                
+            case 'expire_bientot':
+                $dateLimite = Carbon::now()->addDays(30);
+                $this->detailData = LotMedicament::whereHas('stock', function($q) use ($cabinetId) {
+                        $q->where('fkidCabinet', $cabinetId);
+                    })
+                    ->whereNotNull('dateExpiration')
+                    ->where('dateExpiration', '>=', Carbon::now())
+                    ->where('dateExpiration', '<=', $dateLimite)
+                    ->where('quantiteRestante', '>', 0)
+                    ->where('Masquer', 0)
+                    ->with(['medicament', 'stock'])
+                    ->orderBy('dateExpiration', 'asc')
+                    ->get()
+                    ->map(function($lot) {
+                        return [
+                            'medicament' => $lot->medicament->LibelleMedic ?? 'N/A',
+                            'numero_lot' => $lot->numeroLot,
+                            'quantite' => $lot->quantiteRestante,
+                            'date_expiration' => $lot->dateExpiration ? Carbon::parse($lot->dateExpiration)->format('d/m/Y') : 'N/A',
+                            'jours_restants' => $lot->dateExpiration ? Carbon::now()->diffInDays(Carbon::parse($lot->dateExpiration), false) : null,
+                        ];
+                    })
+                    ->toArray();
+                break;
+                
+            case 'entrees':
+                $this->detailData = MouvementStock::whereHas('stock', function($q) use ($cabinetId) {
+                        $q->where('fkidCabinet', $cabinetId);
+                    })
+                    ->where('typeMouvement', 'ENTREE')
+                    ->whereMonth('dateMouvement', Carbon::now()->month)
+                    ->whereYear('dateMouvement', Carbon::now()->year)
+                    ->with(['medicament', 'user'])
+                    ->orderBy('dateMouvement', 'desc')
+                    ->get()
+                    ->map(function($mouvement) {
+                        return [
+                            'medicament' => $mouvement->medicament->LibelleMedic ?? 'N/A',
+                            'quantite' => $mouvement->quantite,
+                            'prix_unitaire' => $mouvement->prixUnitaire,
+                            'montant' => $mouvement->montantTotal,
+                            'date' => $mouvement->dateMouvement ? Carbon::parse($mouvement->dateMouvement)->format('d/m/Y H:i') : 'N/A',
+                            'utilisateur' => $mouvement->user->NomComplet ?? 'N/A',
+                            'reference' => $mouvement->reference,
+                            'motif' => $mouvement->motif,
+                        ];
+                    })
+                    ->toArray();
+                break;
+                
+            case 'sorties':
+                $this->detailData = MouvementStock::whereHas('stock', function($q) use ($cabinetId) {
+                        $q->where('fkidCabinet', $cabinetId);
+                    })
+                    ->where('typeMouvement', 'SORTIE')
+                    ->whereMonth('dateMouvement', Carbon::now()->month)
+                    ->whereYear('dateMouvement', Carbon::now()->year)
+                    ->where('quantite', '!=', 0) // Exclure les quantités nulles
+                    ->with(['medicament', 'user', 'patient', 'facture', 'detailFacture'])
+                    ->orderBy('dateMouvement', 'desc')
+                    ->get()
+                    ->map(function($mouvement) {
+                        // Utiliser le prix facturé (PrixFacture) du détail de facture si disponible, sinon le prix unitaire du mouvement
+                        $prixVente = $mouvement->detailFacture ? ($mouvement->detailFacture->PrixFacture ?? $mouvement->prixUnitaire) : $mouvement->prixUnitaire;
+                        // S'assurer que la quantité est toujours positive pour les sorties
+                        $quantite = abs($mouvement->quantite);
+                        $montantVente = $prixVente * $quantite;
+                        
+                        return [
+                            'medicament' => $mouvement->medicament->LibelleMedic ?? 'N/A',
+                            'quantite' => $quantite, // Quantité toujours positive
+                            'prix_unitaire' => $prixVente, // Prix de vente (facturé)
+                            'montant' => $montantVente, // Montant de vente
+                            'date' => $mouvement->dateMouvement ? Carbon::parse($mouvement->dateMouvement)->format('d/m/Y H:i') : 'N/A',
+                            'utilisateur' => $mouvement->user->NomComplet ?? 'N/A',
+                            'patient' => $mouvement->patient ? trim($mouvement->patient->Nom . ' ' . $mouvement->patient->Prenom) : null,
+                            'facture' => $mouvement->facture ? $mouvement->facture->Nfacture : null,
+                            'motif' => $mouvement->motif,
+                        ];
+                    })
+                    ->filter(function($item) {
+                        // Filtrer les entrées avec quantité nulle (au cas où)
+                        return $item['quantite'] > 0;
+                    })
+                    ->values()
+                    ->toArray();
+                break;
+        }
+        
+        $this->showDetailModal = true;
+    }
+    
+    public function fermerDetailModal()
+    {
+        $this->showDetailModal = false;
+        $this->detailType = '';
+        $this->detailData = [];
+        $this->detailPage = 1;
+    }
+    
+    public function getDetailDataPaginatedProperty()
+    {
+        if (empty($this->detailData)) {
+            return [];
+        }
+        
+        $offset = ($this->detailPage - 1) * $this->detailPerPage;
+        return array_slice($this->detailData, $offset, $this->detailPerPage);
+    }
+    
+    public function getDetailTotalPagesProperty()
+    {
+        if (empty($this->detailData)) {
+            return 1;
+        }
+        return ceil(count($this->detailData) / $this->detailPerPage);
+    }
+    
+    public function previousDetailPage()
+    {
+        if ($this->detailPage > 1) {
+            $this->detailPage--;
+        }
+    }
+    
+    public function nextDetailPage()
+    {
+        if ($this->detailPage < $this->detailTotalPages) {
+            $this->detailPage++;
+        }
+    }
+    
+    public function goToDetailPage($page)
+    {
+        if ($page >= 1 && $page <= $this->detailTotalPages) {
+            $this->detailPage = $page;
+        }
     }
 
     public function render()

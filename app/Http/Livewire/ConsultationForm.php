@@ -39,7 +39,7 @@ class ConsultationForm extends Component
     public $txpec = '';
     public $montant = 0;
     public $mode_paiement = '';
-    public $acte_id = '';
+    public $acte_id = null;
     public $acte_nom = '';
     public $date_consultation;
     public $medecins;
@@ -73,8 +73,8 @@ class ConsultationForm extends Component
         'mode_paiement' => 'required|string',
         'montant' => 'required|numeric|min:0',
         'txpec' => 'nullable|numeric|min:0|max:100',
-        'acte_id' => 'required|integer',
-        'acte_nom' => 'required|string',
+        'acte_id' => 'required|integer|min:1',
+        'acte_nom' => 'required|string|min:1',
     ];
 
     protected $messages = [
@@ -148,55 +148,72 @@ class ConsultationForm extends Component
 
     protected function loadConsultationAct()
     {
-        // Charger l'acte selon le type de consultation
-        $cacheKey = 'consultation_act_' . $this->typeConsultation;
-        $acte = cache()->remember($cacheKey, 3600, function() {
-            if ($this->typeConsultation === 'specialiste') {
-                // Chercher consultation spécialiste
-                return Acte::where(function($query) {
-                    $query->where('Acte', 'like', '%consultation spécialiste%')
-                          ->orWhere('Acte', 'like', '%CONSULTATION SPECIALISTE%')
-                          ->orWhere('Acte', 'like', '%specialiste%')
-                          ->orWhere('Acte', 'like', '%SPECIALISTE%');
-                })->first();
-            } else {
-                // Chercher consultation généraliste (par défaut)
-                return Acte::where(function($query) {
-                    $query->where('Acte', 'like', '%consultation%')
-                          ->orWhere('Acte', 'like', '%CONSULTATION%');
-                })
-                ->where(function($query) {
-                    $query->where('Acte', 'not like', '%spécialiste%')
-                          ->where('Acte', 'not like', '%SPECIALISTE%')
-                          ->where('Acte', 'not like', '%specialiste%');
-                })
-                ->first();
-            }
-        });
-        
-        if ($acte) {
-            $this->acte_id = $acte->ID;
-            $this->acte_nom = $acte->Acte;
-            $this->montant = floatval($acte->PrixRef);
-        } else {
-            // Si aucun acte spécialiste n'est trouvé, utiliser l'acte généraliste
-            if ($this->typeConsultation === 'specialiste') {
-                $acteGeneraliste = cache()->remember('consultation_act_generaliste', 3600, function() {
-                    return Acte::where('Acte', 'like', '%consultation%')
-                              ->orWhere('Acte', 'like', '%CONSULTATION%')
-                              ->first();
-                });
-                
-                if ($acteGeneraliste) {
-                    $this->acte_id = $acteGeneraliste->ID;
-                    $this->acte_nom = $acteGeneraliste->Acte . ' (Spécialiste)';
-                    $this->montant = floatval($acteGeneraliste->PrixRef);
+        try {
+            // Charger l'acte selon le type de consultation
+            $cacheKey = 'consultation_act_' . $this->typeConsultation;
+            $acte = cache()->remember($cacheKey, 3600, function() {
+                if ($this->typeConsultation === 'specialiste') {
+                    // Chercher consultation spécialiste
+                    return Acte::where(function($query) {
+                        $query->where('Acte', 'like', '%consultation spécialiste%')
+                              ->orWhere('Acte', 'like', '%CONSULTATION SPECIALISTE%')
+                              ->orWhere('Acte', 'like', '%specialiste%')
+                              ->orWhere('Acte', 'like', '%SPECIALISTE%');
+                    })->where('Masquer', 0)->first();
                 } else {
-                    throw new \Exception('Aucun acte de consultation trouvé dans la base de données');
+                    // Chercher consultation généraliste (par défaut)
+                    return Acte::where(function($query) {
+                        $query->where('Acte', 'like', '%consultation%')
+                              ->orWhere('Acte', 'like', '%CONSULTATION%');
+                    })
+                    ->where(function($query) {
+                        $query->where('Acte', 'not like', '%spécialiste%')
+                              ->where('Acte', 'not like', '%SPECIALISTE%')
+                              ->where('Acte', 'not like', '%specialiste%');
+                    })
+                    ->where('Masquer', 0)
+                    ->first();
                 }
+            });
+            
+            if ($acte) {
+                $this->acte_id = intval($acte->ID);
+                $this->acte_nom = $acte->Acte;
+                $this->montant = floatval($acte->PrixRef ?? 0);
             } else {
-                throw new \Exception('Aucun acte de consultation généraliste trouvé dans la base de données');
+                // Si aucun acte spécialiste n'est trouvé, utiliser l'acte généraliste
+                if ($this->typeConsultation === 'specialiste') {
+                    $acteGeneraliste = cache()->remember('consultation_act_generaliste', 3600, function() {
+                        return Acte::where(function($query) {
+                            $query->where('Acte', 'like', '%consultation%')
+                                  ->orWhere('Acte', 'like', '%CONSULTATION%');
+                        })
+                        ->where('Masquer', 0)
+                        ->first();
+                    });
+                    
+                    if ($acteGeneraliste) {
+                        $this->acte_id = intval($acteGeneraliste->ID);
+                        $this->acte_nom = $acteGeneraliste->Acte . ' (Spécialiste)';
+                        $this->montant = floatval($acteGeneraliste->PrixRef ?? 0);
+                    } else {
+                        \Log::warning('Aucun acte de consultation trouvé dans la base de données');
+                        $this->acte_id = null;
+                        $this->acte_nom = '';
+                        $this->montant = 0;
+                    }
+                } else {
+                    \Log::warning('Aucun acte de consultation généraliste trouvé dans la base de données');
+                    $this->acte_id = null;
+                    $this->acte_nom = '';
+                    $this->montant = 0;
+                }
             }
+        } catch (\Exception $e) {
+            \Log::error('Erreur lors du chargement de l\'acte de consultation', ['error' => $e->getMessage()]);
+            $this->acte_id = null;
+            $this->acte_nom = '';
+            $this->montant = 0;
         }
     }
     
@@ -317,21 +334,49 @@ class ConsultationForm extends Component
                 'acte_nom' => $this->acte_nom
             ]);
             
+            // S'assurer que acte_id est un entier avant la validation
+            if ($this->acte_id !== null) {
+                $this->acte_id = intval($this->acte_id);
+            }
+            
+            // S'assurer que medecin_id est un entier
+            if ($this->medecin_id !== null) {
+                $this->medecin_id = intval($this->medecin_id);
+            }
+            
+            // S'assurer que montant est un nombre
+            if ($this->montant !== null) {
+                $this->montant = floatval($this->montant);
+            }
+            
             try {
                 $this->validate();
             } catch (\Illuminate\Validation\ValidationException $e) {
                 \Log::error('Erreur de validation', [
                     'errors' => $e->errors(),
                     'data' => [
-                        'selectedPatient' => $this->selectedPatient,
+                        'selectedPatient' => $this->selectedPatient ? 'présent' : 'absent',
                         'medecin_id' => $this->medecin_id,
                         'mode_paiement' => $this->mode_paiement,
                         'montant' => $this->montant,
+                        'txpec' => $this->txpec,
                         'acte_id' => $this->acte_id,
                         'acte_nom' => $this->acte_nom
                     ]
                 ]);
-                throw $e;
+                
+                // Afficher les erreurs de validation à l'utilisateur
+                $errorMessages = [];
+                foreach ($e->errors() as $field => $messages) {
+                    foreach ($messages as $message) {
+                        $errorMessages[] = $message;
+                    }
+                }
+                $errorMessage = 'Erreur de validation: ' . implode(' | ', $errorMessages);
+                
+                $this->addError('general', $errorMessage);
+                session()->flash('error', $errorMessage);
+                return;
             }
 
             if (!$this->selectedPatient) {

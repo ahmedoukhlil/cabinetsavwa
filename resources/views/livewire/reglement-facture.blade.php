@@ -57,6 +57,9 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total règlements patient</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reste à payer patient</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                        @if($isDocteurProprietaire)
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -95,10 +98,21 @@
                                 <span class="inline-block px-3 py-1 rounded-full bg-green-50 text-green-700 border border-green-200 text-xs font-semibold">Réglée</span>
                             @endif
                         </td>
+                        @if($isDocteurProprietaire)
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <button 
+                                wire:click.stop="supprimerFacture({{ $facture->Idfacture }})"
+                                onclick="return confirm('Êtes-vous sûr de vouloir supprimer définitivement la facture N°{{ $facture->Nfacture }} ? Cette action est irréversible et supprimera toutes les traces de cette facture (détails, opérations de caisse, mouvements de stock). Le stock sera restauré.')"
+                                class="text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded transition-colors"
+                                title="Supprimer la facture">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                        @endif
                     </tr>
                     @if($factureSelectionnee && $factureSelectionnee['id'] == $facture->Idfacture)
                         <tr wire:key="details-{{ $facture->Idfacture }}">
-                            <td colspan="8" class="bg-yellow-50 px-6 py-4">
+                            <td colspan="{{ $isDocteurProprietaire ? '8' : '7' }}" class="bg-yellow-50 px-6 py-4">
                                 <div class="mb-2 font-semibold text-gray-700">Actes de la facture :</div>
                                 <div wire:loading.remove wire:target="selectionnerFacture">
                                     <table class="min-w-full mb-2">

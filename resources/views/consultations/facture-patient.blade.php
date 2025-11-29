@@ -34,7 +34,60 @@
         .recu-header, .recu-footer { width: 100%; text-align: center; }
         .recu-header img, .recu-footer img { max-width: 100%; height: auto; }
         .recu-footer { position: absolute; bottom: 0; left: 0; width: 100%; }
-        @media print { .a4, .a5 { box-shadow: none; } .recu-footer { position: fixed; bottom: 0; left: 0; width: 100%; } .print-controls { display: none !important; } }
+        @media print { 
+            .a4, .a5 { box-shadow: none; counter-reset: page 1; } 
+            .recu-footer { position: fixed; bottom: 0; left: 0; width: 100%; } 
+            .print-controls { display: none !important; }
+            
+            /* Numérotation des pages */
+            @page {
+                margin: 20mm 15mm;
+                @bottom-right {
+                    content: "Page " counter(page);
+                    font-size: 10px;
+                    color: #666;
+                }
+            }
+            
+            .page-number {
+                display: block;
+                position: fixed;
+                bottom: 5mm;
+                right: 15mm;
+                font-size: 10px;
+                color: #666;
+                font-weight: normal;
+            }
+            
+            .page-number::after {
+                content: "Page " counter(page);
+            }
+            
+            /* Gestion des sauts de pages */
+            .bloc-patient { page-break-inside: avoid; page-break-after: avoid; }
+            .facture-title { page-break-after: avoid; }
+            .section-header { page-break-after: avoid; page-break-inside: avoid; }
+            .section-wrapper { page-break-inside: auto; }
+            .details-container { page-break-inside: auto; }
+            .details-table { page-break-inside: auto; }
+            .details-table thead { display: table-header-group; }
+            .details-table tbody { page-break-inside: auto; }
+            .details-table tr { page-break-inside: avoid; page-break-after: auto; }
+            .details-table tfoot { display: table-footer-group; }
+            
+            /* Regrouper les éléments de fin de facture */
+            .footer-content { page-break-inside: avoid; margin-top: 20px; }
+            .totaux-table { page-break-inside: avoid; margin-top: 0; }
+            .montant-lettres { page-break-inside: avoid; page-break-before: avoid; }
+            .signature-block { page-break-inside: avoid; page-break-before: avoid; min-height: 80px; }
+            
+            /* Éviter les veuves et orphelines */
+            p, td { orphans: 3; widows: 3; }
+            
+            /* S'assurer que le header et footer ne prennent pas trop d'espace */
+            .recu-header { margin-bottom: 10px; }
+            .recu-footer { margin-top: 20px; }
+        }
         .print-controls { display: flex; gap: 10px; justify-content: flex-end; margin: 18px 0; }
         .print-controls select, .print-controls button { padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         .print-controls button { background: #2c5282; color: #fff; border: none; cursor: pointer; }
@@ -52,13 +105,17 @@
         .signature-name {
             font-style: italic;
         }
+        .details-container { margin-bottom: 15px; }
+        .section-wrapper { margin-bottom: 20px; }
+        .footer-content { margin-top: 20px; }
+        .page-number { display: none; }
     </style>
 </head>
 <body>
 <div class="a4" id="documentContainer">
     <div class="print-controls">
         <select id="documentType" onchange="updateDocumentType()">
-            <option value="Facture" {{ $facture->Type === 'Facture' ? 'selected' : '' }}>Facture</option>
+            <option value="Facture" {{ ($facture->Type === 'Facture' || !$facture->Type || $facture->Type === '') ? 'selected' : '' }}>Facture</option>
             <option value="Devis" {{ $facture->Type === 'Devis' ? 'selected' : '' }}>Devis</option>
         </select>
         <select id="pageFormat" onchange="updatePageFormat()">
@@ -70,7 +127,7 @@
         </button>
     </div>
     <div class="recu-header">@include('partials.recu-header')</div>
-    <div class="facture-title" id="documentTitle">{{ $facture->Type ?: 'FACTURE' }}</div>
+    <div class="facture-title" id="documentTitle">{{ $facture->Type && $facture->Type !== '' ? strtoupper($facture->Type) : 'FACTURE' }}</div>
     <div class="bloc-patient">
         <table class="bloc-patient-table">
             <tr>
@@ -117,32 +174,35 @@
         $detailsGroupes = $facture->getDetailsGroupesParType();
     @endphp
     
+    <div class="details-container">
     @if(count($detailsGroupes) > 1)
         {{-- Affichage par sections si plusieurs types --}}
         @foreach($detailsGroupes as $section => $details)
-            <div class="section-header" style="margin-top: 15px; margin-bottom: 10px; font-weight: bold; font-size: 14px; color: #333; border-bottom: 2px solid #007bff; padding-bottom: 5px;">
-                {{ $section }}
-            </div>
-            <table class="details-table" style="margin-bottom: 20px;">
-                <thead>
-                <tr>
-                    <th>Traitement</th>
-                    <th>Qté</th>
-                    <th>P.U</th>
-                    <th>Sous Total (MRU)</th>
-                </tr>
-                </thead>
-                <tbody>
-                @foreach($details as $detail)
+            <div class="section-wrapper">
+                <div class="section-header" style="margin-top: 15px; margin-bottom: 10px; font-weight: bold; font-size: 14px; color: #333; border-bottom: 2px solid #007bff; padding-bottom: 5px;">
+                    {{ $section }}
+                </div>
+                <table class="details-table" style="margin-bottom: 20px;">
+                    <thead>
                     <tr>
-                        <td>{{ $detail->Actes }}</td>
-                        <td>{{ $detail->Quantite }}</td>
-                        <td>{{ number_format($detail->PrixFacture, 2) }}</td>
-                        <td>{{ number_format($detail->PrixFacture * $detail->Quantite, 2) }}</td>
+                        <th>Traitement</th>
+                        <th>Qté</th>
+                        <th>P.U</th>
+                        <th>Sous Total (MRU)</th>
                     </tr>
-                @endforeach
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                    @foreach($details as $detail)
+                        <tr>
+                            <td>{{ $detail->Actes }}</td>
+                            <td>{{ $detail->Quantite }}</td>
+                            <td>{{ number_format($detail->PrixFacture, 2) }}</td>
+                            <td>{{ number_format($detail->PrixFacture * $detail->Quantite, 2) }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
         @endforeach
     @else
         {{-- Affichage simple si un seul type ou pas de type --}}
@@ -167,42 +227,48 @@
             </tbody>
         </table>
     @endif
-    <table class="totaux-table" id="totauxTable">
-        <tr>
-            <td>Total {{ strtolower($facture->Type ?: 'facture') }}</td>
-            <td>{{ number_format($facture->TotFacture, 2) }} MRU</td>
-        </tr>
-        <tbody id="detailsFacture" style="display: {{ $facture->Type === 'Facture' ? 'table-row-group' : 'none' }}">
-            @if($facture->ISTP == 1)
-                <tr>
-                    <td>Part assurance</td>
-                    <td>{{ number_format($facture->TotalPEC, 2) }} MRU</td>
-                </tr>
-                <tr>
-                    <td>Part patient</td>
-                    <td>{{ number_format($facture->TotalfactPatient, 2) }} MRU</td>
-                </tr>
-            @endif
-            <tr>
-                <td>Total règlements</td>
-                <td>{{ number_format($facture->TotReglPatient, 2) }} MRU</td>
-            </tr>
-            <tr>
-                <td>Reste à payer</td>
-                <td>{{ number_format($facture->restePatient, 2) }} MRU</td>
-            </tr>
-        </tbody>
-    </table>
-    <div class="montant-lettres">
-        Arrêté le présent {{ strtolower($facture->Type ?: 'facture') }} à la somme de : <strong>{{ $facture->en_lettres ?? '' }}</strong>
     </div>
+    
+    <div class="footer-content">
+        <table class="totaux-table" id="totauxTable">
+            <tr>
+                <td>Total {{ strtolower($facture->Type ?: 'facture') }}</td>
+                <td>{{ number_format($facture->TotFacture, 2) }} MRU</td>
+            </tr>
+            <tbody id="detailsFacture" style="display: {{ ($facture->Type === 'Facture' || !$facture->Type || $facture->Type === '') ? 'table-row-group' : 'none' }}">
+                @if($facture->ISTP == 1)
+                    <tr>
+                        <td>Part assurance</td>
+                        <td>{{ number_format($facture->TotalPEC, 2) }} MRU</td>
+                    </tr>
+                    <tr>
+                        <td>Part patient</td>
+                        <td>{{ number_format($facture->TotalfactPatient, 2) }} MRU</td>
+                    </tr>
+                @endif
+                <tr>
+                    <td>Total règlements</td>
+                    <td>{{ number_format($facture->TotReglPatient, 2) }} MRU</td>
+                </tr>
+                <tr>
+                    <td>Reste à payer</td>
+                    <td>{{ number_format($facture->restePatient, 2) }} MRU</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="montant-lettres">
+            Arrêté le présent {{ strtolower($facture->Type ?: 'facture') }} à la somme de : <strong>{{ $facture->en_lettres ?? '' }}</strong>
+        </div>
 
-    <div class="signature-block">
-        <div class="signature-title">Signature</div>
-        <div class="signature-name">{{ $facture->medecin->Nom ?? 'Non spécifié' }}</div>
+        <div class="signature-block">
+            <div class="signature-title">Signature</div>
+            <div class="signature-name">{{ $facture->medecin->Nom ?? 'Non spécifié' }}</div>
+        </div>
     </div>
 
     <div class="recu-footer">@include('partials.recu-footer')</div>
+    
+    <div class="page-number"></div>
 </div>
 
 <script>
@@ -234,6 +300,14 @@ function updatePageFormat() {
     elements.container.classList.toggle('a4', !isA5);
     elements.container.classList.toggle('a5', isA5);
 }
+
+// Initialisation au chargement de la page
+document.addEventListener('DOMContentLoaded', function() {
+    // S'assurer que "Facture" est sélectionné par défaut si aucune valeur n'est définie
+    if (!elements.documentType.value || elements.documentType.value === '') {
+        elements.documentType.value = 'Facture';
+    }
+});
 </script>
 </body>
 </html> 

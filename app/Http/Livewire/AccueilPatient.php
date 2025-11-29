@@ -50,6 +50,7 @@ class AccueilPatient extends Component
     public $showCabinetMenu = false;
     public $showPatientMenu = false;
     public $showOrdonnanceModal = false;
+    public $showDashboardStock = false;
 
     // NOUVELLES PROPRIÉTÉS pour les sous-sections patient - Même logique que les sections principales
     public $showConsultation = false;
@@ -97,7 +98,8 @@ class AccueilPatient extends Component
         'fermerRendezVousModal' => 'fermerRendezVousModal',
         'fermerCaisseOperationsModal' => 'fermerCaisseOperationsModal',
         'fermerDepensesModal' => 'fermerDepensesModal',
-        'fermerStatistiquesModal' => 'fermerStatistiquesModal'
+        'fermerStatistiquesModal' => 'fermerStatistiquesModal',
+        'fermerDashboardStockModal' => 'fermerDashboardStockModal'
     ];
 
     public function mount()
@@ -263,6 +265,7 @@ class AccueilPatient extends Component
         $this->showUsersModal = false;
         $this->showMedecinsModal = false;
         $this->showTypePaiementModal = false;
+        $this->showDashboardStock = false;
         // Ne pas fermer showOrdonnanceModal ici, il sera géré par ouvrirOrdonnanceModal
 
         // NOUVELLES SOUS-SECTIONS PATIENT - Même logique que les sections principales
@@ -641,6 +644,39 @@ class AccueilPatient extends Component
     public function fermerTypePaiementModal()
     {
         $this->showTypePaiementModal = false;
+    }
+
+    public function ouvrirDashboardStock()
+    {
+        // Fermer les autres modals
+        $this->showAssureurModal = false;
+        $this->showListeActesModal = false;
+        $this->showListeMedicamentsModal = false;
+        $this->showUsersModal = false;
+        $this->showMedecinsModal = false;
+        $this->showTypePaiementModal = false;
+        $this->showCreateRdvModal = false;
+        $this->showCreatePatientModal = false;
+        $this->showCaisseOperations = false;
+        $this->showDepenses = false;
+        $this->showStatistiques = false;
+        $this->showOrdonnanceModal = false;
+        $this->showConsultation = false;
+        $this->showReglement = false;
+        $this->showRendezVous = false;
+        $this->showPatientMenu = false;
+        $this->showCabinetMenu = false;
+        
+        // Ouvrir le modal dashboard stock
+        $this->showDashboardStock = true;
+        
+        // Forcer le re-render
+        $this->dispatchBrowserEvent('dashboard-stock-modal-opened');
+    }
+
+    public function fermerDashboardStockModal()
+    {
+        $this->showDashboardStock = false;
     }
 
     public function ouvrirOrdonnanceModal()

@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Cache;
 use App\Models\Facturepatient;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use App\Models\StockMedicament;
+use App\Models\LotMedicament;
+use App\Models\MouvementStock;
 
 class ReglementFacture extends Component
 {
@@ -269,6 +272,39 @@ class ReglementFacture extends Component
             }
             $facture->save();
 
+            // NOTE: Le stock est maintenant déduit lors de l'ajout du médicament à la facture
+            // Cette vérification reste comme sécurité au cas où le stock n'aurait pas été déduit
+            // (pour les factures créées avant cette modification)
+            $facture->refresh();
+            if ($facture->estCompletementPayee()) {
+                // Vérifier si le stock a déjà été déduit pour cette facture
+                $detailsMedicaments = Detailfacturepatient::where('fkidfacture', $facture->Idfacture)
+                    ->where('IsAct', 2)
+                    ->whereNotNull('fkidmedicament')
+                    ->get();
+                
+                $stockDejaDeduit = true;
+                foreach ($detailsMedicaments as $detail) {
+                    $mouvement = MouvementStock::where('fkidFacture', $facture->Idfacture)
+                        ->where('fkidMedicament', $detail->fkidmedicament)
+                        ->where('typeMouvement', 'SORTIE')
+                        ->exists();
+                    
+                    if (!$mouvement) {
+                        $stockDejaDeduit = false;
+                        break;
+                    }
+                }
+                
+                // Si le stock n'a pas été déduit, le déduire maintenant (sécurité)
+                if (!$stockDejaDeduit) {
+                    \Log::info('Stock non déduit lors de la facturation, déduction lors du paiement (sécurité)', [
+                        'facture_id' => $facture->Idfacture
+                    ]);
+                    $this->deduireStockFacture($facture, $operation);
+                }
+            }
+
             DB::commit();
 
             $this->dernierReglement = [
@@ -393,7 +429,25 @@ class ReglementFacture extends Component
 
             $isAct = $medicament->fkidtype + 1; // 2=Médicament, 3=Analyse, 4=Radio
 
-            \App\Models\Detailfacturepatient::create([
+            // Si c'est un médicament (fkidtype = 1, IsAct = 2), vérifier le stock
+            $stock = null;
+            if ($medicament->fkidtype == 1 && $isAct == 2) {
+                $cabinetId = Auth::user()->fkidcabinet ?? 1;
+                $stock = StockMedicament::where('fkidMedicament', $this->selectedMedicamentId)
+                    ->where('fkidCabinet', $cabinetId)
+                    ->first();
+
+                if (!$stock) {
+                    throw new \Exception('Le médicament "' . $medicament->LibelleMedic . '" n\'est pas en stock.');
+                }
+
+                // Vérifier le stock disponible (déduction immédiate lors de la facturation)
+                if ($stock->quantiteStock < $this->quantiteMedicament) {
+                    throw new \Exception('Stock insuffisant pour le médicament "' . $medicament->LibelleMedic . '". Stock disponible: ' . number_format($stock->quantiteStock, 0));
+                }
+            }
+
+            $detail = \App\Models\Detailfacturepatient::create([
                 'fkidfacture' => $this->factureIdForActe,
                 'DtAjout' => now(),
                 'Actes' => $medicament->LibelleMedic,
@@ -419,6 +473,11 @@ class ReglementFacture extends Component
             $facture->TotalPEC = $totalPEC;
             $facture->TotalfactPatient = $totalfactPatient;
             $facture->save();
+
+            // Si c'est un médicament, déduire le stock immédiatement selon la méthode FIFO
+            if ($medicament->fkidtype == 1 && $isAct == 2 && $stock) {
+                $this->deduireStockMedicament($stock, $this->quantiteMedicament, $this->factureIdForActe, $detail->idDetfacture, $medicament->LibelleMedic);
+            }
 
             DB::commit();
             
@@ -757,6 +816,355 @@ class ReglementFacture extends Component
         } catch (\Exception $e) {
             DB::rollBack();
             session()->flash('error', 'Erreur lors de la création de la facture: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Déduire le stock d'un médicament lors de l'ajout à une facture
+     * Utilise la méthode FIFO (First In First Out) pour gérer les lots
+     * 
+     * @param StockMedicament $stock Le stock du médicament
+     * @param float $quantite La quantité à déduire
+     * @param int $factureId L'ID de la facture
+     * @param int $detailId L'ID du détail de facture
+     * @param string $libelleMedicament Le libellé du médicament
+     * @return void
+     */
+    protected function deduireStockMedicament(StockMedicament $stock, $quantite, $factureId, $detailId, $libelleMedicament)
+    {
+        $cabinetId = Auth::user()->fkidcabinet;
+        $userId = Auth::id();
+        $medicamentId = $stock->fkidMedicament;
+        
+        // Déduire selon la méthode FIFO
+        $quantiteRestante = $quantite;
+        
+        // Récupérer les lots actifs triés par date d'expiration (FIFO)
+        $lots = LotMedicament::where('fkidStock', $stock->idStock)
+            ->where('Masquer', 0)
+            ->where('quantiteRestante', '>', 0)
+            ->orderBy('dateExpiration', 'asc') // Plus ancien d'abord
+            ->orderBy('dateEntree', 'asc') // En cas d'égalité, plus ancien entrée d'abord
+            ->get();
+        
+        foreach ($lots as $lot) {
+            if ($quantiteRestante <= 0) {
+                break;
+            }
+            
+            $quantiteDuLot = min($quantiteRestante, $lot->quantiteRestante);
+            $lot->quantiteRestante -= $quantiteDuLot;
+            $lot->save();
+            
+            $quantiteRestante -= $quantiteDuLot;
+            
+            // Créer un mouvement de stock pour ce lot
+            $facture = \App\Models\Facture::find($factureId);
+            MouvementStock::create([
+                'fkidStock' => $stock->idStock,
+                'fkidMedicament' => $medicamentId,
+                'fkidLot' => $lot->idLot,
+                'typeMouvement' => 'SORTIE',
+                'quantite' => $quantiteDuLot,
+                'prixUnitaire' => $lot->prixAchatUnitaire ?? $stock->prixAchat,
+                'montantTotal' => ($lot->prixAchatUnitaire ?? $stock->prixAchat) * $quantiteDuLot,
+                'motif' => 'Vente - Facture N°' . ($facture->Nfacture ?? $factureId),
+                'fkidFacture' => $factureId,
+                'fkidDetailFacture' => $detailId,
+                'fkidPatient' => $facture->IDPatient ?? null,
+                'fkidUser' => $userId,
+                'dateMouvement' => Carbon::now(),
+                'reference' => $facture->Nfacture ?? null,
+                'notes' => 'Déduction automatique lors de la facturation'
+            ]);
+        }
+        
+        // Si on n'a pas assez de stock dans les lots, déduire du stock général
+        if ($quantiteRestante > 0) {
+            \Log::warning('Stock insuffisant dans les lots, déduction du stock général', [
+                'medicament_id' => $medicamentId,
+                'quantite_manquante' => $quantiteRestante,
+                'stock_disponible' => $stock->quantiteStock
+            ]);
+            
+            // Déduire du stock général
+            $stock->quantiteStock = max(0, $stock->quantiteStock - $quantiteRestante);
+            $stock->dateDerniereSortie = Carbon::now();
+            $stock->save();
+            
+            // Créer un mouvement de stock sans lot
+            $facture = \App\Models\Facture::find($factureId);
+            MouvementStock::create([
+                'fkidStock' => $stock->idStock,
+                'fkidMedicament' => $medicamentId,
+                'fkidLot' => null,
+                'typeMouvement' => 'SORTIE',
+                'quantite' => $quantiteRestante,
+                'prixUnitaire' => $stock->prixAchat,
+                'montantTotal' => $stock->prixAchat * $quantiteRestante,
+                'motif' => 'Vente - Facture N°' . ($facture->Nfacture ?? $factureId) . ' (Stock général)',
+                'fkidFacture' => $factureId,
+                'fkidDetailFacture' => $detailId,
+                'fkidPatient' => $facture->IDPatient ?? null,
+                'fkidUser' => $userId,
+                'dateMouvement' => Carbon::now(),
+                'reference' => $facture->Nfacture ?? null,
+                'notes' => 'Déduction automatique lors de la facturation (stock général)'
+            ]);
+        } else {
+            // Mettre à jour le stock total en fonction des lots
+            $stockTotalLots = LotMedicament::where('fkidStock', $stock->idStock)
+                ->where('Masquer', 0)
+                ->sum('quantiteRestante');
+            
+            $stock->quantiteStock = $stockTotalLots;
+            $stock->dateDerniereSortie = Carbon::now();
+            $stock->save();
+        }
+    }
+
+    /**
+     * Déduire le stock des médicaments d'une facture complètement payée
+     * Utilise la méthode FIFO (First In First Out) pour gérer les lots
+     * NOTE: Cette méthode est maintenant utilisée comme sécurité si le stock n'a pas été déduit lors de la facturation
+     * 
+     * @param Facture $facture La facture complètement payée
+     * @param CaisseOperation $operation L'opération de paiement
+     * @return void
+     */
+    protected function deduireStockFacture(Facture $facture, CaisseOperation $operation)
+    {
+        $cabinetId = Auth::user()->fkidcabinet;
+        $userId = Auth::id();
+        
+        // Récupérer tous les détails de facture qui sont des médicaments (IsAct = 2)
+        $detailsMedicaments = Detailfacturepatient::where('fkidfacture', $facture->Idfacture)
+            ->where('IsAct', 2) // Uniquement les médicaments
+            ->whereNotNull('fkidmedicament')
+            ->get();
+        
+        foreach ($detailsMedicaments as $detail) {
+            $medicamentId = $detail->fkidmedicament;
+            $quantiteADeduire = $detail->Quantite;
+            
+            // Récupérer le stock du médicament
+            $stock = StockMedicament::where('fkidMedicament', $medicamentId)
+                ->where('fkidCabinet', $cabinetId)
+                ->first();
+            
+            if (!$stock) {
+                \Log::warning('Stock non trouvé pour médicament', [
+                    'medicament_id' => $medicamentId,
+                    'facture_id' => $facture->Idfacture,
+                    'cabinet_id' => $cabinetId
+                ]);
+                continue;
+            }
+            
+            // Vérifier si le stock a déjà été déduit pour cette facture
+            $dejaDeduit = MouvementStock::where('fkidFacture', $facture->Idfacture)
+                ->where('fkidDetailFacture', $detail->idDetfacture)
+                ->where('typeMouvement', 'SORTIE')
+                ->exists();
+            
+            if ($dejaDeduit) {
+                \Log::info('Stock déjà déduit pour ce détail de facture', [
+                    'detail_id' => $detail->idDetfacture,
+                    'facture_id' => $facture->Idfacture
+                ]);
+                continue;
+            }
+            
+            // Déduire selon la méthode FIFO
+            $quantiteRestante = $quantiteADeduire;
+            $lotsUtilises = [];
+            
+            // Récupérer les lots actifs triés par date d'expiration (FIFO)
+            $lots = LotMedicament::where('fkidStock', $stock->idStock)
+                ->where('Masquer', 0)
+                ->where('quantiteRestante', '>', 0)
+                ->orderBy('dateExpiration', 'asc') // Plus ancien d'abord
+                ->orderBy('dateEntree', 'asc') // En cas d'égalité, plus ancien entrée d'abord
+                ->get();
+            
+            foreach ($lots as $lot) {
+                if ($quantiteRestante <= 0) {
+                    break;
+                }
+                
+                $quantiteDuLot = min($quantiteRestante, $lot->quantiteRestante);
+                $lot->quantiteRestante -= $quantiteDuLot;
+                $lot->save();
+                
+                $quantiteRestante -= $quantiteDuLot;
+                
+                // Créer un mouvement de stock pour ce lot
+                MouvementStock::create([
+                    'fkidStock' => $stock->idStock,
+                    'fkidMedicament' => $medicamentId,
+                    'fkidLot' => $lot->idLot,
+                    'typeMouvement' => 'SORTIE',
+                    'quantite' => $quantiteDuLot,
+                    'prixUnitaire' => $lot->prixAchatUnitaire ?? $stock->prixAchat,
+                    'montantTotal' => ($lot->prixAchatUnitaire ?? $stock->prixAchat) * $quantiteDuLot,
+                    'motif' => 'Vente - Facture N°' . $facture->Nfacture,
+                    'fkidFacture' => $facture->Idfacture,
+                    'fkidDetailFacture' => $detail->idDetfacture,
+                    'fkidPatient' => $facture->IDPatient,
+                    'fkidUser' => $userId,
+                    'dateMouvement' => Carbon::now(),
+                    'reference' => $facture->Nfacture,
+                    'notes' => 'Déduction automatique lors du paiement complet'
+                ]);
+                
+                $lotsUtilises[] = [
+                    'lot' => $lot,
+                    'quantite' => $quantiteDuLot
+                ];
+            }
+            
+            // Si on n'a pas assez de stock dans les lots, déduire du stock général
+            if ($quantiteRestante > 0) {
+                \Log::warning('Stock insuffisant dans les lots, déduction du stock général', [
+                    'medicament_id' => $medicamentId,
+                    'quantite_manquante' => $quantiteRestante,
+                    'stock_disponible' => $stock->quantiteStock
+                ]);
+                
+                // Déduire du stock général
+                $stock->quantiteStock = max(0, $stock->quantiteStock - $quantiteRestante);
+                $stock->dateDerniereSortie = Carbon::now();
+                $stock->save();
+                
+                // Créer un mouvement de stock sans lot
+                MouvementStock::create([
+                    'fkidStock' => $stock->idStock,
+                    'fkidMedicament' => $medicamentId,
+                    'fkidLot' => null,
+                    'typeMouvement' => 'SORTIE',
+                    'quantite' => $quantiteRestante,
+                    'prixUnitaire' => $stock->prixAchat,
+                    'montantTotal' => $stock->prixAchat * $quantiteRestante,
+                    'motif' => 'Vente - Facture N°' . $facture->Nfacture . ' (Stock général)',
+                    'fkidFacture' => $facture->Idfacture,
+                    'fkidDetailFacture' => $detail->idDetfacture,
+                    'fkidPatient' => $facture->IDPatient,
+                    'fkidUser' => $userId,
+                    'dateMouvement' => Carbon::now(),
+                    'reference' => $facture->Nfacture,
+                    'notes' => 'Déduction automatique lors du paiement complet (stock général)'
+                ]);
+            } else {
+                // Mettre à jour le stock total en fonction des lots
+                $stockTotalLots = LotMedicament::where('fkidStock', $stock->idStock)
+                    ->where('Masquer', 0)
+                    ->sum('quantiteRestante');
+                
+                $stock->quantiteStock = $stockTotalLots;
+                $stock->dateDerniereSortie = Carbon::now();
+                $stock->save();
+            }
+            
+            \Log::info('Stock déduit pour médicament', [
+                'medicament_id' => $medicamentId,
+                'quantite' => $quantiteADeduire,
+                'facture_id' => $facture->Idfacture,
+                'lots_utilises' => count($lotsUtilises)
+            ]);
+        }
+    }
+
+    /**
+     * Supprimer une facture complètement (médecin propriétaire uniquement)
+     */
+    public function supprimerFacture($factureId)
+    {
+        $user = Auth::user();
+        $isDocteurProprietaire = ($user->IdClasseUser ?? null) == 3;
+        
+        if (!$isDocteurProprietaire) {
+            session()->flash('error', 'Vous n\'avez pas les permissions nécessaires pour supprimer une facture.');
+            return;
+        }
+        
+        try {
+            DB::beginTransaction();
+            
+            $facture = Facture::find($factureId);
+            if (!$facture) {
+                session()->flash('error', 'Facture introuvable.');
+                DB::rollBack();
+                return;
+            }
+            
+            // 1. Restaurer le stock et supprimer les mouvements de stock liés
+            $mouvementsStock = MouvementStock::where('fkidFacture', $factureId)->get();
+            foreach ($mouvementsStock as $mouvement) {
+                // Si c'est une sortie, restaurer le stock
+                if ($mouvement->typeMouvement === 'SORTIE') {
+                    $stock = StockMedicament::find($mouvement->fkidStock);
+                    if ($stock) {
+                        // Restaurer la quantité dans le stock
+                        $stock->quantiteStock += abs($mouvement->quantite);
+                        $stock->save();
+                        
+                        // Si le mouvement est lié à un lot, restaurer le lot
+                        if ($mouvement->fkidLot) {
+                            $lot = LotMedicament::find($mouvement->fkidLot);
+                            if ($lot) {
+                                $lot->quantiteRestante += abs($mouvement->quantite);
+                                $lot->save();
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Supprimer tous les mouvements de stock liés
+            MouvementStock::where('fkidFacture', $factureId)->delete();
+            
+            // 2. Supprimer les opérations de caisse liées
+            CaisseOperation::where('fkidfacturebord', $factureId)->delete();
+            
+            // 3. Supprimer les détails de facture
+            Detailfacturepatient::where('fkidfacture', $factureId)->delete();
+            
+            // 4. Supprimer la facture elle-même
+            $factureNumero = $facture->Nfacture;
+            $facture->delete();
+            
+            DB::commit();
+            
+            // Invalider le cache des factures
+            if ($this->selectedPatient) {
+                $patientId = is_array($this->selectedPatient) ? ($this->selectedPatient['ID'] ?? null) : ($this->selectedPatient->ID ?? null);
+                if ($patientId) {
+                    // Invalider tous les caches de factures pour ce patient
+                    for ($page = 1; $page <= 10; $page++) {
+                        Cache::forget('factures_patient_' . $patientId . '_page_' . $page);
+                    }
+                    Cache::forget('factures_en_attente_patient_' . $patientId);
+                }
+            }
+            
+            // Réinitialiser les factures pour recharger la liste
+            $this->factures = null;
+            $this->facturesEnAttente = null;
+            $this->factureSelectionnee = null;
+            
+            // Forcer le rechargement des factures
+            $this->factures = $this->getFacturesProperty();
+            
+            session()->flash('message', 'Facture N°' . $factureNumero . ' supprimée avec succès. Le stock a été restauré.');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Erreur lors de la suppression de la facture', [
+                'facture_id' => $factureId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            session()->flash('error', 'Erreur lors de la suppression de la facture : ' . $e->getMessage());
         }
     }
 

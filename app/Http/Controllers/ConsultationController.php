@@ -45,7 +45,7 @@ class ConsultationController extends Controller
                 'details.acte',
                 'assureur',
                 'rendezVous' => function($query) {
-                    $query->select('IDRdv', 'OrdreRDV', 'fkidFacture');
+                    $query->select('IDRdv', 'OrdreRDV', 'fkidFacture', 'HeureRdv', 'dtPrevuRDV', 'fkidMedecin');
                 }
             ])->findOrFail($factureId);
 
@@ -168,10 +168,72 @@ class ConsultationController extends Controller
         $facture->restePEC = $montants['restePEC'];
         $facture->restePatient = $montants['restePatient'];
 
+        // Forcer le type à "Facture" par défaut (toujours afficher une facture)
+        $facture->Type = 'Facture';
+
         // Récupérer l'utilisateur connecté
         $currentUser = Auth::user();
 
         return view('consultations.facture-patient', compact('facture', 'cabinet', 'currentUser'));
+    }
+
+    /**
+     * Afficher l'ordonnance pour une consultation/facture
+     */
+    public function showOrdonnance($factureId)
+    {
+        // Charger la facture avec les détails et le patient
+        $consultation = Facture::where('Idfacture', $factureId)
+            ->with([
+                'patient' => function($query) {
+                    $query->select('ID', 'IdentifiantPatient', 'NomContact', 'Telephone1', 'Age');
+                },
+                'medecin' => function($query) {
+                    $query->select('idMedecin', 'Nom', 'Contact', 'Specialite');
+                },
+                'details' => function($query) {
+                    // Charger uniquement les médicaments (IsAct = 2, 3, 4)
+                    $query->whereIn('IsAct', [2, 3, 4])
+                          ->with(['medicament'])
+                          ->orderBy('idDetfacture');
+                }
+            ])
+            ->firstOrFail();
+
+        // Préparer les médicaments avec leurs informations
+        $medications = $consultation->details->map(function($detail) {
+            $medicamentInfo = new \stdClass();
+            
+            // Nom du médicament
+            if ($detail->medicament) {
+                $medicamentInfo->LibMedicament = $detail->medicament->LibelleMedic ?? $detail->Actes;
+            } else {
+                $medicamentInfo->LibMedicament = $detail->Actes;
+            }
+            
+            // Posologie (peut être ajoutée manuellement ou depuis un autre champ)
+            // Pour l'instant, on affiche la quantité
+            $quantite = $detail->Quantite ?? 1;
+            $medicamentInfo->Posologie = $quantite > 1 ? "Quantité : $quantite" : '';
+            $medicamentInfo->Quantite = $quantite;
+            
+            return $medicamentInfo;
+        });
+
+        // Utiliser le cache pour les données du cabinet
+        $cabinet = cache()->remember('cabinet_info_' . Auth::id(), 86400, function() {
+            $user = Auth::user();
+            return [
+                'NomCabinet' => $user->cabinet->NomCabinet ?? 'Cabinet Savwa',
+                'Adresse' => $user->cabinet->Adresse ?? 'Tevragh-Zeina PK Exit N°58',
+                'Telephone' => $user->cabinet->Telephone ?? '32 77 48 97 – 43 42 15 56'
+            ];
+        });
+
+        // Ajouter un champ Poids à la consultation (s'il existe dans votre base)
+        $consultation->Poids = $consultation->Poids ?? '';
+
+        return view('consultations.ordonnance', compact('consultation', 'medications', 'cabinet'));
     }
 
     // Helper simple pour montant en lettres (à remplacer par votre propre logique si besoin)

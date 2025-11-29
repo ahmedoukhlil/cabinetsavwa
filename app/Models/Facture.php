@@ -267,4 +267,23 @@ class Facture extends Model
 			return count($details) > 0;
 		});
 	}
+
+	/**
+	 * Vérifie si la facture est complètement payée
+	 * 
+	 * @return bool
+	 */
+	public function estCompletementPayee()
+	{
+		// Patient non assuré : TotFacture doit être <= TotReglPatient
+		if ($this->ISTP == 0) {
+			return ($this->TotFacture ?? 0) <= ($this->TotReglPatient ?? 0);
+		}
+		
+		// Patient assuré : TotalfactPatient <= TotReglPatient ET TotalPEC <= ReglementPEC
+		$patientPaye = ($this->TotalfactPatient ?? 0) <= ($this->TotReglPatient ?? 0);
+		$pecPayee = ($this->TotalPEC ?? 0) <= ($this->ReglementPEC ?? 0);
+		
+		return $patientPaye && $pecPayee;
+	}
 }
