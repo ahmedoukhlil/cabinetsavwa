@@ -981,15 +981,18 @@ class PharmacieManager extends Component
                     ->where('typeMouvement', 'ENTREE')
                     ->whereMonth('dateMouvement', Carbon::now()->month)
                     ->whereYear('dateMouvement', Carbon::now()->year)
-                    ->with(['medicament', 'user'])
+                    ->with(['medicament', 'user', 'lot'])
                     ->orderBy('dateMouvement', 'desc')
                     ->get()
                     ->map(function($mouvement) {
+                        // Utiliser le prix d'achat du lot si disponible, sinon le prixUnitaire du mouvement
+                        $prixAchat = $mouvement->lot ? ($mouvement->lot->prixAchatUnitaire ?? $mouvement->prixUnitaire) : $mouvement->prixUnitaire;
+                        
                         return [
                             'medicament' => $mouvement->medicament->LibelleMedic ?? 'N/A',
                             'quantite' => $mouvement->quantite,
-                            'prix_unitaire' => $mouvement->prixUnitaire,
-                            'montant' => $mouvement->montantTotal,
+                            'prix_unitaire' => $prixAchat, // Prix d'achat
+                            'montant' => $prixAchat * $mouvement->quantite, // Recalculer avec le prix d'achat
                             'date' => $mouvement->dateMouvement ? Carbon::parse($mouvement->dateMouvement)->format('d/m/Y H:i') : 'N/A',
                             'utilisateur' => $mouvement->user->NomComplet ?? 'N/A',
                             'reference' => $mouvement->reference,
@@ -1011,16 +1014,16 @@ class PharmacieManager extends Component
                     ->orderBy('dateMouvement', 'desc')
                     ->get()
                     ->map(function($mouvement) {
-                        // Utiliser le prix facturé (PrixFacture) du détail de facture si disponible, sinon le prix unitaire du mouvement
-                        $prixVente = $mouvement->detailFacture ? ($mouvement->detailFacture->PrixFacture ?? $mouvement->prixUnitaire) : $mouvement->prixUnitaire;
+                        // Utiliser uniquement le PrixFacture du détail de facture
+                        $prixFacture = $mouvement->detailFacture ? ($mouvement->detailFacture->PrixFacture ?? 0) : 0;
                         // S'assurer que la quantité est toujours positive pour les sorties
                         $quantite = abs($mouvement->quantite);
-                        $montantVente = $prixVente * $quantite;
+                        $montantVente = $prixFacture * $quantite;
                         
                         return [
                             'medicament' => $mouvement->medicament->LibelleMedic ?? 'N/A',
                             'quantite' => $quantite, // Quantité toujours positive
-                            'prix_unitaire' => $prixVente, // Prix de vente (facturé)
+                            'prix_unitaire' => $prixFacture, // PrixFacture du détail de facture
                             'montant' => $montantVente, // Montant de vente
                             'date' => $mouvement->dateMouvement ? Carbon::parse($mouvement->dateMouvement)->format('d/m/Y H:i') : 'N/A',
                             'utilisateur' => $mouvement->user->NomComplet ?? 'N/A',

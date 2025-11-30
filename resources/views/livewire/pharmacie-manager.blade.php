@@ -101,7 +101,7 @@
             <div wire:click="ouvrirDetailModal('quantite')" class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-lg p-8 border-l-6 border-purple-600 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105">
                 <div class="flex items-center justify-between">
                     <div class="flex-1">
-                        <p class="text-base font-semibold text-purple-800 uppercase tracking-wide mb-3">Quantité totale</p>
+                        <p class="text-base font-semibold text-purple-800 uppercase tracking-wide mb-3">Unités disponibles</p>
                         <p class="text-5xl font-extrabold text-purple-900 mb-1">{{ number_format($stats['totalQuantiteStock'], 0, ',', ' ') }}</p>
                         <p class="text-sm font-medium text-purple-700 mt-2">Unité(s) disponible(s)</p>
                         <p class="text-xs text-purple-600 mt-2"><i class="fas fa-mouse-pointer mr-1"></i>Cliquer pour voir les détails</p>
@@ -212,7 +212,7 @@
                 <h3 class="text-xl font-bold">
                     @if($detailType === 'total') Détails - Total médicaments
                     @elseif($detailType === 'valeur') Détails - Valeur du stock
-                    @elseif($detailType === 'quantite') Détails - Quantité totale
+                    @elseif($detailType === 'quantite') Détails - Unités disponibles
                     @elseif($detailType === 'rupture') Détails - Médicaments en rupture
                     @elseif($detailType === 'faible') Détails - Stock faible
                     @elseif($detailType === 'expires') Détails - Lots expirés
