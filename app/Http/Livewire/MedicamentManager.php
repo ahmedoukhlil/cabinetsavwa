@@ -200,11 +200,24 @@ class MedicamentManager extends Component
     public function closeStockModal()
     {
         $this->showStockModal = false;
-        $this->resetStockForm();
+        $this->resetStockFormComplete();
     }
 
     public function resetStockForm()
     {
+        // Réinitialiser tous les champs sauf le médicament (les vider)
+        $this->stockQuantite = null;
+        $this->stockPrixAchat = null;
+        $this->stockQuantiteMin = null;
+        $this->stockNumeroLot = '';
+        $this->stockDateExpiration = null;
+        $this->stockFournisseur = '';
+        $this->stockReferenceFacture = '';
+    }
+
+    public function resetStockFormComplete()
+    {
+        // Réinitialiser tous les champs y compris le médicament (pour la fermeture du modal)
         $this->stockMedicamentId = null;
         $this->stockQuantite = 1;
         $this->stockPrixAchat = 0;
@@ -308,7 +321,8 @@ class MedicamentManager extends Component
         });
 
         session()->flash('message', 'Stock ajouté avec succès.');
-        $this->closeStockModal();
+        // Réinitialiser les champs sauf le médicament pour permettre d'ajouter plus de stock
+        $this->resetStockForm();
     }
 
     public function render()

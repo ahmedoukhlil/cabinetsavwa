@@ -7,6 +7,7 @@ use App\Models\Facture;
 use App\Models\Patient;
 use App\Models\CaisseOperation;
 use App\Models\Medecin;
+use App\Models\Medecin as MedecinModel;
 use App\Models\RefTypePaiement;
 use Illuminate\Support\Facades\DB;
 use App\Models\Detailfacturepatient;
@@ -1272,6 +1273,8 @@ class ReglementFacture extends Component
             MouvementStock::where('fkidFacture', $factureId)->delete();
             
             // 2. Supprimer les opérations de caisse liées
+            $operationsCaisse = CaisseOperation::where('fkidfacturebord', $factureId)->get();
+            $dateOperation = $operationsCaisse->first() ? $operationsCaisse->first()->dateoper : null;
             CaisseOperation::where('fkidfacturebord', $factureId)->delete();
             
             // 3. Supprimer les détails de facture
@@ -1295,6 +1298,26 @@ class ReglementFacture extends Component
                 }
             }
             
+            // Invalider le cache des opérations de caisse pour mettre à jour la vue "caisse paie"
+            $cabinetId = Auth::user()->fkidcabinet ?? 1;
+            if ($dateOperation) {
+                $dateOperationStr = Carbon::parse($dateOperation)->toDateString();
+                // Invalider le cache pour toutes les combinaisons possibles (médecin, date)
+                $medecins = Medecin::where('fkidCabinet', $cabinetId)->pluck('idMedecin');
+                foreach ($medecins as $medecinId) {
+                    Cache::forget('caisse_operations_' . $cabinetId . '_m' . $medecinId . '_d' . $dateOperationStr);
+                    Cache::forget('caisse_operations_' . $cabinetId . '_m' . $medecinId . '_d' . $dateOperationStr . '_f' . $dateOperationStr);
+                }
+                // Invalider aussi pour le cabinet sans filtre médecin
+                Cache::forget('caisse_operations_' . $cabinetId . '_d' . $dateOperationStr);
+                Cache::forget('caisse_operations_' . $cabinetId . '_d' . $dateOperationStr . '_f' . $dateOperationStr);
+            }
+            // Invalider aussi le cache général (sans date spécifique)
+            Cache::forget('caisse_operations_' . $cabinetId);
+            
+            // Émettre un événement Livewire pour rafraîchir le composant CaisseOperationsManager
+            $this->emit('caisseOperationsUpdated');
+            
             // Réinitialiser les factures pour recharger la liste
             $this->factures = null;
             $this->facturesEnAttente = null;
@@ -1303,7 +1326,7 @@ class ReglementFacture extends Component
             // Forcer le rechargement des factures
             $this->factures = $this->getFacturesProperty();
             
-            session()->flash('message', 'Facture N°' . $factureNumero . ' supprimée avec succès. Le stock a été restauré.');
+            session()->flash('message', 'Facture N°' . $factureNumero . ' supprimée avec succès. Le stock a été restauré et les montants ont été retirés de la caisse.');
             
         } catch (\Exception $e) {
             DB::rollBack();
