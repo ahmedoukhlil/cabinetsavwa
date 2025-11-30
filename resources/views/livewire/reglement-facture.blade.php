@@ -424,6 +424,22 @@
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Prix facturé</label>
                                         <input type="number" wire:model="prixFactureMedicament" step="0.01" class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm bg-white text-gray-900 focus:border-primary focus:ring-primary">
                                     </div>
+                                    @if($selectedMedicamentType == '1')
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Stock disponible</label>
+                                        <div class="mt-1 p-3 rounded-md border {{ ($stockDisponibleMedicament ?? 0) > 0 ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50' }}">
+                                            <span class="text-sm font-semibold {{ ($stockDisponibleMedicament ?? 0) > 0 ? 'text-green-700' : 'text-red-700' }}">
+                                                <i class="fas {{ ($stockDisponibleMedicament ?? 0) > 0 ? 'fa-check-circle' : 'fa-exclamation-triangle' }} mr-2"></i>
+                                                {{ number_format($stockDisponibleMedicament ?? 0, 0) }} unité(s) disponible(s)
+                                                @if(($stockDisponibleMedicament ?? 0) == 0)
+                                                    <span class="text-xs block mt-1 font-normal">⚠️ Stock épuisé - Impossible d'ajouter à la facture</span>
+                                                @elseif(($stockDisponibleMedicament ?? 0) < 10)
+                                                    <span class="text-xs block mt-1 font-normal text-orange-600">⚠️ Stock faible</span>
+                                                @endif
+                                            </span>
+                                        </div>
+                                    </div>
+                                    @endif
                                     @php
                                         $isAssure = $selectedPatient['Assureur'] ?? 0;
                                         $txpec = $selectedPatient['TauxPEC'] ?? 0;

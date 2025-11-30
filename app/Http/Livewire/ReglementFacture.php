@@ -60,6 +60,7 @@ class ReglementFacture extends Component
     public $prixReferenceMedicament;
     public $prixFactureMedicament;
     public $quantiteMedicament = 1;
+    public $stockDisponibleMedicament = null; // Quantité disponible en stock
 
     protected $listeners = [
         'patientSelected' => 'handlePatientSelected',
@@ -347,6 +348,7 @@ class ReglementFacture extends Component
         $this->prixReferenceMedicament = null;
         $this->prixFactureMedicament = null;
         $this->quantiteMedicament = 1;
+        $this->stockDisponibleMedicament = null;
     }
 
     public function updatedSelectedMedicamentType($value)
@@ -363,6 +365,18 @@ class ReglementFacture extends Component
         $this->selectedMedicamentType = (string)$fkidtype;
         $this->prixReferenceMedicament = $prixRef;
         $this->prixFactureMedicament = $prixRef;
+        
+        // Récupérer la quantité disponible en stock (uniquement pour les médicaments, fkidtype = 1)
+        if ($fkidtype == 1) {
+            $cabinetId = Auth::user()->fkidcabinet ?? 1;
+            $stock = StockMedicament::where('fkidMedicament', $id)
+                ->where('fkidCabinet', $cabinetId)
+                ->where('Masquer', 0)
+                ->first();
+            $this->stockDisponibleMedicament = $stock ? $stock->quantiteStock : 0;
+        } else {
+            $this->stockDisponibleMedicament = null; // Pas de stock pour analyses/radios
+        }
     }
 
     public function updatedSelectedMedicamentId($value)
@@ -370,6 +384,7 @@ class ReglementFacture extends Component
         if (empty($value)) {
             $this->prixReferenceMedicament = null;
             $this->prixFactureMedicament = null;
+            $this->stockDisponibleMedicament = null;
             return;
         }
 
@@ -379,9 +394,22 @@ class ReglementFacture extends Component
         if ($medicament) {
             $this->prixReferenceMedicament = $medicament->PrixRef ?? 0;
             $this->prixFactureMedicament = $medicament->PrixRef ?? 0;
+            
+            // Récupérer la quantité disponible en stock (uniquement pour les médicaments, fkidtype = 1)
+            if ($medicament->fkidtype == 1) {
+                $cabinetId = Auth::user()->fkidcabinet ?? 1;
+                $stock = StockMedicament::where('fkidMedicament', $medicamentId)
+                    ->where('fkidCabinet', $cabinetId)
+                    ->where('Masquer', 0)
+                    ->first();
+                $this->stockDisponibleMedicament = $stock ? $stock->quantiteStock : 0;
+            } else {
+                $this->stockDisponibleMedicament = null; // Pas de stock pour analyses/radios
+            }
         } else {
             $this->prixReferenceMedicament = null;
             $this->prixFactureMedicament = null;
+            $this->stockDisponibleMedicament = null;
         }
     }
 
@@ -396,8 +424,20 @@ class ReglementFacture extends Component
         if ($medicament && $medicament->fkidtype == $type) {
             $this->selectedMedicamentId = $medicament->IDMedic;
             $this->selectedMedicamentType = $type;
-            $this->prixReferenceMedicament = 0;
-            $this->prixFactureMedicament = 0;
+            $this->prixReferenceMedicament = $medicament->PrixRef ?? 0;
+            $this->prixFactureMedicament = $medicament->PrixRef ?? 0;
+            
+            // Récupérer la quantité disponible en stock (uniquement pour les médicaments, fkidtype = 1)
+            if ($medicament->fkidtype == 1) {
+                $cabinetId = Auth::user()->fkidcabinet ?? 1;
+                $stock = StockMedicament::where('fkidMedicament', $id)
+                    ->where('fkidCabinet', $cabinetId)
+                    ->where('Masquer', 0)
+                    ->first();
+                $this->stockDisponibleMedicament = $stock ? $stock->quantiteStock : 0;
+            } else {
+                $this->stockDisponibleMedicament = null; // Pas de stock pour analyses/radios
+            }
         } else {
             $this->resetAddMedicamentForm();
         }
@@ -669,6 +709,61 @@ class ReglementFacture extends Component
                 throw new \Exception('Facture non trouvée');
             }
 
+            // Si c'est un médicament (IsAct = 2), restaurer le stock
+            if ($detail->IsAct == 2 && $detail->fkidmedicament) {
+                $medicamentId = $detail->fkidmedicament;
+                $quantiteARestaurer = $detail->Quantite ?? 0;
+                
+                if ($quantiteARestaurer > 0) {
+                    $cabinetId = Auth::user()->fkidcabinet ?? 1;
+                    $stock = StockMedicament::where('fkidMedicament', $medicamentId)
+                        ->where('fkidCabinet', $cabinetId)
+                        ->where('Masquer', 0)
+                        ->first();
+                    
+                    if ($stock) {
+                        // Restaurer la quantité dans le stock
+                        $stock->quantiteStock += $quantiteARestaurer;
+                        $stock->save();
+                        
+                        // Essayer de restaurer dans les lots (si des mouvements de stock existent pour ce détail)
+                        $mouvementsLot = MouvementStock::where('fkidDetailFacture', $detailId)
+                            ->where('fkidMedicament', $medicamentId)
+                            ->where('typeMouvement', 'SORTIE')
+                            ->whereNotNull('fkidLot')
+                            ->orderBy('dateMouvement', 'desc') // Restaurer dans l'ordre inverse
+                            ->get();
+                        
+                        $quantiteRestanteARestaurer = $quantiteARestaurer;
+                        foreach ($mouvementsLot as $mouvement) {
+                            if ($quantiteRestanteARestaurer <= 0) {
+                                break;
+                            }
+                            
+                            $lot = LotMedicament::find($mouvement->fkidLot);
+                            if ($lot) {
+                                $quantiteDuMouvement = abs($mouvement->quantite);
+                                $quantiteARestaurerDansLot = min($quantiteDuMouvement, $quantiteRestanteARestaurer);
+                                $lot->quantiteRestante += $quantiteARestaurerDansLot;
+                                $lot->save();
+                                $quantiteRestanteARestaurer -= $quantiteARestaurerDansLot;
+                            }
+                        }
+                        
+                        \Log::info('Stock restauré lors de la suppression d\'un médicament de la facture', [
+                            'detail_id' => $detailId,
+                            'medicament_id' => $medicamentId,
+                            'quantite_restauree' => $quantiteARestaurer,
+                            'quantite_restauree_dans_lots' => $quantiteARestaurer - $quantiteRestanteARestaurer,
+                            'stock_apres_restauration' => $stock->quantiteStock
+                        ]);
+                    }
+                    
+                    // Supprimer les mouvements de stock liés à ce détail
+                    MouvementStock::where('fkidDetailFacture', $detailId)->delete();
+                }
+            }
+
             // Calculer le montant à soustraire
             $montantActe = $detail->PrixFacture * $detail->Quantite;
             $txpec = $facture->TXPEC ?? 0;
@@ -684,12 +779,19 @@ class ReglementFacture extends Component
             $detail->delete();
 
             DB::commit();
-            session()->flash('message', 'Acte supprimé avec succès.');
+            
+            $typeItem = $detail->IsAct == 2 ? 'Médicament' : 'Acte';
+            session()->flash('message', $typeItem . ' supprimé avec succès' . ($detail->IsAct == 2 ? '. Le stock a été restauré.' : '.'));
             $this->loadFactures(); // Recharger les factures pour voir les changements
 
         } catch (\Exception $e) {
             DB::rollBack();
-            session()->flash('error', 'Une erreur est survenue lors de la suppression de l\'acte : ' . $e->getMessage());
+            \Log::error('Erreur lors de la suppression d\'un acte/médicament', [
+                'detail_id' => $detailId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            session()->flash('error', 'Une erreur est survenue lors de la suppression : ' . $e->getMessage());
         }
     }
 
@@ -1097,26 +1199,72 @@ class ReglementFacture extends Component
                 return;
             }
             
-            // 1. Restaurer le stock et supprimer les mouvements de stock liés
-            $mouvementsStock = MouvementStock::where('fkidFacture', $factureId)->get();
-            foreach ($mouvementsStock as $mouvement) {
-                // Si c'est une sortie, restaurer le stock
-                if ($mouvement->typeMouvement === 'SORTIE') {
-                    $stock = StockMedicament::find($mouvement->fkidStock);
-                    if ($stock) {
-                        // Restaurer la quantité dans le stock
-                        $stock->quantiteStock += abs($mouvement->quantite);
-                        $stock->save();
+            // 1. Restaurer le stock à partir des mouvements de stock ET des détails de facture
+            $cabinetId = Auth::user()->fkidcabinet ?? 1;
+            
+            // Récupérer tous les détails de facture qui sont des médicaments (IsAct = 2)
+            $detailsMedicaments = Detailfacturepatient::where('fkidfacture', $factureId)
+                ->where('IsAct', 2) // Médicaments
+                ->whereNotNull('fkidmedicament')
+                ->get();
+            
+            // Grouper par médicament pour restaurer les quantités
+            $medicamentsARestaurer = [];
+            foreach ($detailsMedicaments as $detail) {
+                $medicamentId = $detail->fkidmedicament;
+                $quantite = $detail->Quantite ?? 0;
+                
+                if ($medicamentId && $quantite > 0) {
+                    if (!isset($medicamentsARestaurer[$medicamentId])) {
+                        $medicamentsARestaurer[$medicamentId] = 0;
+                    }
+                    $medicamentsARestaurer[$medicamentId] += $quantite;
+                }
+            }
+            
+            // Restaurer le stock pour chaque médicament
+            foreach ($medicamentsARestaurer as $medicamentId => $quantiteARestaurer) {
+                $stock = StockMedicament::where('fkidMedicament', $medicamentId)
+                    ->where('fkidCabinet', $cabinetId)
+                    ->where('Masquer', 0)
+                    ->first();
+                
+                if ($stock) {
+                    // Restaurer la quantité dans le stock
+                    $stock->quantiteStock += $quantiteARestaurer;
+                    $stock->save();
+                    
+                    // Essayer de restaurer dans les lots (si des mouvements de stock existent)
+                    $mouvementsLot = MouvementStock::where('fkidFacture', $factureId)
+                        ->where('fkidMedicament', $medicamentId)
+                        ->where('typeMouvement', 'SORTIE')
+                        ->whereNotNull('fkidLot')
+                        ->orderBy('dateMouvement', 'desc') // Restaurer dans l'ordre inverse (dernier d'abord)
+                        ->get();
+                    
+                    $quantiteRestanteARestaurer = $quantiteARestaurer;
+                    foreach ($mouvementsLot as $mouvement) {
+                        if ($quantiteRestanteARestaurer <= 0) {
+                            break;
+                        }
                         
-                        // Si le mouvement est lié à un lot, restaurer le lot
-                        if ($mouvement->fkidLot) {
-                            $lot = LotMedicament::find($mouvement->fkidLot);
-                            if ($lot) {
-                                $lot->quantiteRestante += abs($mouvement->quantite);
-                                $lot->save();
-                            }
+                        $lot = LotMedicament::find($mouvement->fkidLot);
+                        if ($lot) {
+                            $quantiteDuMouvement = abs($mouvement->quantite);
+                            $quantiteARestaurerDansLot = min($quantiteDuMouvement, $quantiteRestanteARestaurer);
+                            $lot->quantiteRestante += $quantiteARestaurerDansLot;
+                            $lot->save();
+                            $quantiteRestanteARestaurer -= $quantiteARestaurerDansLot;
                         }
                     }
+                    
+                    // Si toute la quantité n'a pas pu être restaurée dans les lots, elle est déjà dans le stock général
+                    \Log::info('Stock restauré pour médicament', [
+                        'medicament_id' => $medicamentId,
+                        'quantite_restauree' => $quantiteARestaurer,
+                        'quantite_restauree_dans_lots' => $quantiteARestaurer - $quantiteRestanteARestaurer,
+                        'stock_apres_restauration' => $stock->quantiteStock
+                    ]);
                 }
             }
             
